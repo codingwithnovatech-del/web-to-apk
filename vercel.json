@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pip install -r backend/requirements.txt mangum",
+  "functions": {
+    "api/index.py": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ]
+}
