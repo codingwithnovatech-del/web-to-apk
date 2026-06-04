@@ -1,17 +1,41 @@
 const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
 
-function getToken() {
-  let token = localStorage.getItem("github_token");
-  if (!token) {
-    token = prompt("Enter your GitHub Personal Access Token (repo/actions scope):");
-    if (token) localStorage.setItem("github_token", token);
+function handleLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const token = document.getElementById("loginToken").value.trim();
+  if (!user || !token) { alert("Please fill in all fields"); return; }
+  if (!token.startsWith("ghp_") && !token.startsWith("github_pat_")) {
+    alert("Invalid token format. It should start with 'ghp_' or 'github_pat_'");
+    return;
   }
-  return token;
+  localStorage.setItem("github_user", user);
+  localStorage.setItem("github_token", token);
+  showApp();
+}
+
+function handleLogout() {
+  localStorage.removeItem("github_user");
+  localStorage.removeItem("github_token");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("appScreen").classList.add("hidden");
+  document.getElementById("loginToken").value = "";
+  document.getElementById("loginUser").value = "";
+}
+
+function showApp() {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("appScreen").classList.remove("hidden");
+  const user = localStorage.getItem("github_user") || "User";
+  document.getElementById("greeting").textContent = "Hi, " + user;
+}
+
+function getToken() {
+  return localStorage.getItem("github_token");
 }
 
 async function startBuild() {
   const token = getToken();
-  if (!token) { showError("GitHub token required"); return; }
+  if (!token) { handleLogout(); showError("Session expired. Please login again."); return; }
 
   const url = document.getElementById("urlInput").value.trim();
   const name = document.getElementById("nameInput").value.trim();
@@ -57,8 +81,8 @@ async function startBuild() {
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        localStorage.removeItem("github_token");
-        showError("Invalid or expired token. Refresh and enter a new one.");
+        handleLogout();
+        showError("Invalid or expired token. Please login again.");
       } else {
         showError("Failed to trigger build (HTTP " + res.status + ")");
       }
@@ -133,3 +157,10 @@ function resetForm() {
   document.getElementById("buildBtn").disabled = false;
   document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
 }
+
+// Auto-login on load
+window.onload = function() {
+  if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
+    showApp();
+  }
+};
