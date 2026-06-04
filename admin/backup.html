@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup - Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">📱 WebAPK</div>
+      <div class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="builds.html" class="nav-item">📋 Builds</a>
+        <a href="users.html" class="nav-item">👥 Users</a>
+        <a href="api-keys.html" class="nav-item">🔑 API Keys</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="analytics.html" class="nav-item">📈 Analytics</a>
+        <a href="logs.html" class="nav-item">📝 Logs</a>
+        <a href="ip-blacklist.html" class="nav-item">🚫 IP Blacklist</a>
+        <a href="backup.html" class="nav-item active">💾 Backup</a>
+      </div>
+      <div class="sidebar-footer">
+        <span id="userName">Admin</span>
+        <button onclick="adminLogout()" class="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <header class="page-header">
+        <h1>💾 Backup & Restore</h1>
+        <button onclick="createBackup()" class="btn-sm">+ Create Backup</button>
+      </header>
+
+      <div class="card">
+        <h2>Backups</h2>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Filename</th>
+                <th>Size</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="backupTableBody"></tbody>
+          </table>
+        </div>
+        <div id="noBackups" class="hidden text-muted" style="text-align:center;padding:40px;">No backups yet</div>
+      </div>
+
+      <div class="card">
+        <h2>Restore Backup</h2>
+        <p class="text-muted">Restoring will overwrite current data. Make sure to create a backup first.</p>
+        <div class="form-group">
+          <label>Select Backup</label>
+          <select id="restoreSelect"><option value="">No backups available</option></select>
+        </div>
+        <button onclick="restoreBackup()" class="btn-sm danger">⚠️ Restore Selected Backup</button>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+  <script>loadBackups();</script>
+</body>
+</html>

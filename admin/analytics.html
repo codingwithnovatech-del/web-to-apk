@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">📱 WebAPK</div>
+      <div class="sidebar-nav">
+        <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+        <a href="builds.html" class="nav-item">📋 Builds</a>
+        <a href="users.html" class="nav-item">👥 Users</a>
+        <a href="api-keys.html" class="nav-item">🔑 API Keys</a>
+        <a href="settings.html" class="nav-item">⚙️ Settings</a>
+        <a href="analytics.html" class="nav-item active">📈 Analytics</a>
+        <a href="logs.html" class="nav-item">📝 Logs</a>
+        <a href="ip-blacklist.html" class="nav-item">🚫 IP Blacklist</a>
+        <a href="backup.html" class="nav-item">💾 Backup</a>
+      </div>
+      <div class="sidebar-footer">
+        <span id="userName">Admin</span>
+        <button onclick="adminLogout()" class="logout-btn">Logout</button>
+      </div>
+    </nav>
+    <main class="main-content">
+      <header class="page-header">
+        <h1>📈 Analytics</h1>
+        <div class="btn-group">
+          <button class="btn-sm active" onclick="loadAnalytics(7)">7 Days</button>
+          <button class="btn-sm" onclick="loadAnalytics(30)">30 Days</button>
+          <button class="btn-sm" onclick="loadAnalytics(90)">90 Days</button>
+          <button onclick="exportAnalytics()" class="btn-sm">📥 Export CSV</button>
+        </div>
+      </header>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>Status Breakdown</h2>
+          <canvas id="statusChart"></canvas>
+        </div>
+        <div class="card">
+          <h2>Daily Errors</h2>
+          <canvas id="errorsChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Common Errors</h2>
+        <div id="commonErrors"><p class="text-muted">Loading...</p></div>
+      </div>
+
+      <div class="card">
+        <h2>Top User IPs</h2>
+        <div id="topIps"><p class="text-muted">Loading...</p></div>
+      </div>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="app.js"></script>
+  <script>loadAnalytics(7);</script>
+</body>
+</html>

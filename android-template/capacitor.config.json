@@ -1,0 +1,21 @@
+{
+  "appId": "com.webapk.app",
+  "appName": "Web APK",
+  "webDir": "www",
+  "server": {
+    "url": "https://example.com",
+    "allowNavigation": ["*"],
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#ffffff"
+    }
+  }
+}
