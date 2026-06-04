@@ -20,6 +20,9 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 @app.on_event("startup")
 async def startup():
     print("Starting up...", flush=True)
+    asyncio.create_task(init_db_background())
+
+async def init_db_background():
     try:
         await init_db()
         print("DB initialized", flush=True)
