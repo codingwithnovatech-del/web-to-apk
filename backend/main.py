@@ -121,18 +121,18 @@ async def start_build(req: BuildRequest, request: Request):
     await db.commit()
     await db.close()
 
-    # Trigger GitHub Actions workflow
+    # Trigger GitHub Actions workflow via workflow_dispatch
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"https://api.github.com/repos/{REPO}/dispatches",
+                f"https://api.github.com/repos/{REPO}/actions/workflows/build.yml/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "event_type": "build-apk",
-                    "client_payload": {
+                    "ref": "main",
+                    "inputs": {
                         "url": req.url,
                         "app_name": req.app_name,
                         "build_id": build_id
