@@ -81,6 +81,8 @@ jobs:
         run: |
           git config user.name "APK Builder"
           git config user.email "actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           git add docs/builds/${{ inputs.build_id }}.json
           git commit -m "build status: ${{ inputs.build_id }}" || true
+          git pull --rebase origin main || true
           git push
