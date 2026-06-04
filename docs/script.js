@@ -1,5 +1,17 @@
 const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
 
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("loginBtn").addEventListener("click", handleLogin);
+  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+  document.getElementById("buildBtn").addEventListener("click", startBuild);
+  document.getElementById("resetBtn1").addEventListener("click", resetForm);
+  document.getElementById("resetBtn2").addEventListener("click", resetForm);
+
+  if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
+    showApp();
+  }
+});
+
 function handleLogin() {
   const user = document.getElementById("loginUser").value.trim();
   const token = document.getElementById("loginToken").value.trim();
@@ -157,10 +169,3 @@ function resetForm() {
   document.getElementById("buildBtn").disabled = false;
   document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
 }
-
-// Auto-login on load
-window.onload = function() {
-  if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
-    showApp();
-  }
-};

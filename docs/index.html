@@ -25,7 +25,7 @@
           <input type="password" id="loginToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
           <p class="field-hint">Required to trigger builds via GitHub API</p>
         </div>
-        <button id="loginBtn" onclick="handleLogin()">
+        <button id="loginBtn">
           <span class="btn-icon">🔑</span>
           Login
         </button>
@@ -39,7 +39,7 @@
     <div class="container">
       <div class="top-bar">
         <span id="greeting" class="greeting"></span>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
       </div>
 
       <div class="header">
@@ -57,7 +57,7 @@
           <label for="nameInput">App Name</label>
           <input type="text" id="nameInput" placeholder="My Awesome App" required maxlength="50">
         </div>
-        <button id="buildBtn" onclick="startBuild()">
+        <button id="buildBtn">
           <span class="btn-icon">⚡</span>
           Build APK
         </button>
@@ -84,7 +84,7 @@
           <a id="downloadLink" class="download-btn" target="_blank">
             <span>⬇</span> Download APK
           </a>
-          <button class="new-build-btn" onclick="resetForm()">+ Convert Another</button>
+          <button class="new-build-btn" id="resetBtn1">+ Convert Another</button>
         </div>
       </div>
 
@@ -93,7 +93,7 @@
           <div class="error-icon">❌</div>
           <h2>Build Failed</h2>
           <p id="errorMessage"></p>
-          <button class="new-build-btn" onclick="resetForm()">Try Again</button>
+          <button class="new-build-btn" id="resetBtn2">Try Again</button>
         </div>
       </div>
 
