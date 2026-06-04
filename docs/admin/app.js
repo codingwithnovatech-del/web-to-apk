@@ -1,4 +1,4 @@
-const API_URL = "https://web-to-apk-production.up.railway.app";
+const API_URL = "https://web-to-apk-production.railway.app";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────
 

@@ -13,7 +13,7 @@ on:
         required: true
 
 env:
-  CALLBACK_URL: "https://web-to-apk-production.up.railway.app"
+  CALLBACK_URL: "https://web-to-apk-production.railway.app"
   CALLBACK_SECRET: "webapk-secret-2024"
 
 jobs:
