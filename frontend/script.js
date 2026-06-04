@@ -1,4 +1,4 @@
-const API_URL = "https://web-to-apk.vercel.app";
+const API_URL = "https://web-to-apk-backend.onrender.com";
 
 async function startBuild() {
   const url = document.getElementById("urlInput").value.trim();
