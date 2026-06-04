@@ -1,0 +1,9 @@
+name: Test Dispatch
+on:
+  repository_dispatch:
+    types: [ping]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Dispatch works! Event: ${{ github.event.action }}"
