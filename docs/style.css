@@ -148,13 +148,16 @@ body {
 .hero-stats {
   display: flex;
   justify-content: center;
-  gap: 40px;
+  gap: 32px;
   margin-top: 40px;
+  flex-wrap: wrap;
 }
 
 .stat {
   font-size: 0.85rem;
   color: #666688;
+  text-align: center;
+  min-width: 100px;
 }
 
 .stat strong {
@@ -218,6 +221,7 @@ section {
   font-size: 0.85rem;
   color: #8888aa;
   line-height: 1.5;
+  text-align: left;
 }
 
 /* ====== HOW IT WORKS ====== */
@@ -229,9 +233,9 @@ section {
 
 .steps {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 16px;
+  gap: 0;
 }
 
 .step {
@@ -240,7 +244,8 @@ section {
   border-radius: 14px;
   padding: 28px 20px;
   flex: 1;
-  max-width: 260px;
+  max-width: 280px;
+  text-align: center;
 }
 
 .step-num {
@@ -266,13 +271,15 @@ section {
 .step-content p {
   font-size: 0.82rem;
   color: #8888aa;
+  max-width: 220px;
+  margin: 0 auto;
 }
 
 .step-arrow {
   font-size: 1.5rem;
   color: #e94560;
   font-weight: 300;
-  margin-bottom: 24px;
+  padding: 50px 12px 0;
 }
 
 /* ====== CONVERTER SECTION ====== */
@@ -555,21 +562,30 @@ section {
 }
 
 /* ====== RESPONSIVE ====== */
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 768px) {
+  .hero { min-height: auto; padding: 100px 20px 60px; }
   .hero h1 { font-size: 2.2rem; }
   .hero-sub { font-size: 1rem; }
-  .hero-stats { gap: 24px; flex-wrap: wrap; }
-  .features-grid { grid-template-columns: 1fr 1fr; }
-  .steps { flex-direction: column; }
-  .step-arrow { transform: rotate(90deg); margin: 4px 0; }
-  .step { max-width: 100%; }
+  .hero-stats { gap: 20px; }
+  .steps { flex-direction: column; align-items: center; }
+  .step-arrow { transform: rotate(90deg); padding: 8px 0; }
+  .step { max-width: 320px; width: 100%; }
   .nav-links a:not(.nav-cta) { display: none; }
+  .section-title { font-size: 1.6rem; margin-bottom: 32px; }
 }
 
 @media (max-width: 480px) {
   .features-grid { grid-template-columns: 1fr; }
-  .hero { min-height: auto; padding: 100px 16px 60px; }
   .hero h1 { font-size: 1.8rem; }
-  .converter-card { padding: 24px 16px; }
-  section { padding: 60px 16px; }
+  .hero-sub { font-size: 0.95rem; }
+  .hero-stats { gap: 16px; }
+  .stat { min-width: 80px; font-size: 0.8rem; }
+  .converter-card { padding: 20px 14px; }
+  section { padding: 40px 14px; }
+  .feature-card { padding: 20px 16px; }
+  .converter-section { padding: 40px 14px 80px; }
 }
