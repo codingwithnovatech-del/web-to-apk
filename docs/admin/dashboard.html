@@ -9,21 +9,20 @@
 <body>
   <div class="admin-layout">
     <nav class="sidebar">
-      <div class="sidebar-brand">📱 WebAPK</div>
-      <div class="sidebar-nav">
-        <a href="dashboard.html" class="nav-item active">📊 Dashboard</a>
-        <a href="builds.html" class="nav-item">📋 Builds</a>
-        <a href="users.html" class="nav-item">👥 Users</a>
-        <a href="api-keys.html" class="nav-item">🔑 API Keys</a>
-        <a href="settings.html" class="nav-item">⚙️ Settings</a>
-        <a href="analytics.html" class="nav-item">📈 Analytics</a>
-        <a href="logs.html" class="nav-item">📝 Logs</a>
-        <a href="ip-blacklist.html" class="nav-item">🚫 IP Blacklist</a>
-        <a href="backup.html" class="nav-item">💾 Backup</a>
-      </div>
+      <div class="sidebar-header">⚙️ Admin</div>
+      <a href="dashboard.html" class="active">📊 Dashboard</a>
+      <a href="builds.html">📦 Builds</a>
+      <a href="users.html">👥 Users</a>
+      <a href="notifications.html">🔔 Notifications</a>
+      <a href="api-keys.html">🔑 API Keys</a>
+      <a href="analytics.html">📈 Analytics</a>
+      <a href="ip-blacklist.html">🚫 IP Blacklist</a>
+      <a href="logs.html">📋 Logs</a>
+      <a href="backup.html">💾 Backup</a>
+      <a href="settings.html">⚙️ Settings</a>
       <div class="sidebar-footer">
-        <span id="userName">Admin</span>
-        <button onclick="adminLogout()" class="logout-btn">Logout</button>
+        <a href="../" style="color:#888">← Main Site</a>
+        <a href="#" onclick="adminLogout()" style="color:#e94560">Logout</a>
       </div>
     </nav>
     <main class="main-content">

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Push Notifications - Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .notif-form { max-width: 600px; margin: 0 auto; }
+    .notif-form textarea { resize: vertical; min-height: 80px; }
+    .notif-history { margin-top: 24px; }
+    .notif-item { background: #1a1a2e; border: 1px solid #2a2a3e; border-radius: 10px; padding: 16px; margin-bottom: 10px; }
+    .notif-item h4 { color: #fff; margin-bottom: 4px; }
+    .notif-item p { color: #888; font-size: 0.85rem; }
+    .notif-item small { color: #666; font-size: 0.75rem; }
+    .firebase-setup { background: #1a1a2e; border: 1px solid #e94560; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .firebase-setup h3 { color: #e94560; margin-bottom: 8px; font-size: 1rem; }
+    .firebase-setup p, .firebase-setup li { color: #aaa; font-size: 0.85rem; }
+    .firebase-setup ol { margin-left: 20px; margin-top: 8px; }
+    .firebase-setup code { background: #0a0a1a; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #ff6b81; }
+    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .status-badge.sent { background: rgba(76,217,100,0.15); color: #4cd964; }
+    .status-badge.failed { background: rgba(255,69,58,0.15); color: #ff453a; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-header">⚙️ Admin</div>
+    <a href="dashboard.html">📊 Dashboard</a>
+    <a href="builds.html">📦 Builds</a>
+    <a href="users.html">👥 Users</a>
+    <a href="notifications.html" class="active">🔔 Notifications</a>
+    <a href="api-keys.html">🔑 API Keys</a>
+    <a href="analytics.html">📈 Analytics</a>
+    <a href="ip-blacklist.html">🚫 IP Blacklist</a>
+    <a href="logs.html">📋 Logs</a>
+    <a href="backup.html">💾 Backup</a>
+    <a href="settings.html">⚙️ Settings</a>
+    <div class="sidebar-footer">
+      <a href="../" style="color:#888">← Main Site</a>
+      <a href="#" onclick="adminLogout()" style="color:#e94560">Logout</a>
+    </div>
+  </nav>
+  <main class="main-content">
+    <h1>🔔 Push Notifications</h1>
+    <p style="color:#888;margin-bottom:24px">Send push notifications to all installed apps via Firebase Cloud Messaging.</p>
+
+    <div class="firebase-setup" id="setupGuide">
+      <h3>🔧 Firebase Setup Required</h3>
+      <p>To send push notifications, you need a Firebase project:</p>
+      <ol>
+        <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#e94560">Firebase Console</a></li>
+        <li>Create a project (or use existing)</li>
+        <li>Add an <strong>Android app</strong> with your app's package name</li>
+        <li>Download <code>google-services.json</code> and save it</li>
+        <li>Go to <strong>Project Settings → Cloud Messaging</strong></li>
+        <li>Copy the <strong>Server Key</strong> (starts with "AAAA...")</li>
+      </ol>
+      <p style="margin-top:12px">Save these in <a href="settings.html" style="color:#e94560">Settings → Firebase Config</a></p>
+    </div>
+
+    <div class="card notif-form">
+      <h3 style="margin-bottom:16px">✉️ Send Notification</h3>
+      <div class="form-group">
+        <label>Notification Title</label>
+        <input type="text" id="notifTitle" placeholder="New Update Available!">
+      </div>
+      <div class="form-group">
+        <label>Notification Message</label>
+        <textarea id="notifBody" placeholder="Tap to see what's new in this update..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Click URL (optional — opens in app)</label>
+        <input type="url" id="notifUrl" placeholder="https://yourwebsite.com/page">
+      </div>
+      <div class="form-group">
+        <label>Send to Topic</label>
+        <input type="text" id="notifTopic" value="all" placeholder="all">
+      </div>
+      <button id="sendNotifBtn" onclick="sendNotification()">📨 Send to All Devices</button>
+      <div id="notifResult" class="hidden" style="margin-top:12px;padding:12px;border-radius:8px"></div>
+    </div>
+
+    <div class="notif-history">
+      <h3 style="margin-bottom:16px">📜 Sent Notifications</h3>
+      <div id="notifHistory">
+        <p style="color:#666;text-align:center;padding:20px">No notifications sent yet.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const FCM_API = "https://fcm.googleapis.com/fcm/send";
+
+    function getFirebaseKey() {
+      return localStorage.getItem("fcm_server_key") || "";
+    }
+
+    async function sendNotification() {
+      const key = getFirebaseKey();
+      if (!key) {
+        showResult("Setup required! Add your Firebase Server Key in Settings.", "error");
+        return;
+      }
+
+      const title = document.getElementById("notifTitle").value.trim();
+      const body = document.getElementById("notifBody").value.trim();
+      const url = document.getElementById("notifUrl").value.trim();
+      const topic = document.getElementById("notifTopic").value.trim() || "all";
+
+      if (!title || !body) {
+        alert("Title and message are required");
+        return;
+      }
+
+      document.getElementById("sendNotifBtn").disabled = true;
+      document.getElementById("sendNotifBtn").textContent = "⏳ Sending...";
+
+      const payload = {
+        to: "/topics/" + topic,
+        notification: { title, body },
+        data: {}
+      };
+      if (url) payload.data.url = url;
+
+      try {
+        const res = await fetch(FCM_API, {
+          method: "POST",
+          headers: {
+            "Authorization": "key=" + key,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success === 1) {
+          showResult("✅ Notification sent to " + data.success + " device(s)!", "success");
+          saveHistory({ title, body, url, topic, time: new Date().toISOString(), success: true });
+          loadNotifHistory();
+        } else {
+          showResult("❌ Failed: " + JSON.stringify(data.results || data), "error");
+          saveHistory({ title, body, url, topic, time: new Date().toISOString(), success: false });
+        }
+      } catch (e) {
+        showResult("❌ Error: " + e.message, "error");
+      }
+
+      document.getElementById("sendNotifBtn").disabled = false;
+      document.getElementById("sendNotifBtn").textContent = "📨 Send to All Devices";
+    }
+
+    function showResult(msg, type) {
+      const el = document.getElementById("notifResult");
+      el.classList.remove("hidden");
+      el.style.background = type === "success" ? "rgba(76,217,100,0.1)" : "rgba(255,69,58,0.1)";
+      el.style.border = "1px solid " + (type === "success" ? "#4cd964" : "#ff453a");
+      el.textContent = msg;
+    }
+
+    function saveHistory(item) {
+      const history = JSON.parse(localStorage.getItem("notif_history") || "[]");
+      history.unshift(item);
+      if (history.length > 50) history.pop();
+      localStorage.setItem("notif_history", JSON.stringify(history));
+    }
+
+    function loadNotifHistory() {
+      const history = JSON.parse(localStorage.getItem("notif_history") || "[]");
+      const el = document.getElementById("notifHistory");
+      if (history.length === 0) {
+        el.innerHTML = '<p style="color:#666;text-align:center;padding:20px">No notifications sent yet.</p>';
+        return;
+      }
+      el.innerHTML = history.map(h => `
+        <div class="notif-item">
+          <h4>${h.title}</h4>
+          <p>${h.body}</p>
+          <small>${new Date(h.time).toLocaleString()} ${h.success ? '<span class="status-badge sent">Sent</span>' : '<span class="status-badge failed">Failed</span>'}</small>
+        </div>
+      `).join("");
+    }
+
+    // Check Firebase setup
+    document.addEventListener("DOMContentLoaded", function() {
+      if (getFirebaseKey()) {
+        document.getElementById("setupGuide").style.display = "none";
+      }
+      loadNotifHistory();
+    });
+  </script>
+</body>
+</html>

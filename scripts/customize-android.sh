@@ -161,6 +161,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadUrl() {
+        // Check if opened from notification with a specific URL
+        String notifUrl = getIntent().getStringExtra("url");
+        if (notifUrl != null && !notifUrl.isEmpty()) {
+            currentUrl = notifUrl;
+        }
         if (isOnline()) {
             webView.loadUrl(currentUrl);
             webView.setVisibility(View.VISIBLE);
@@ -247,7 +252,7 @@ LAYOUTEOF
 # ============================================================
 # 4. Manifest + Gradle deps
 # ============================================================
-echo "[4/4] Manifest + Gradle..."
+echo "[4/5] Manifest + Gradle..."
 
 MANIFEST="app/src/main/AndroidManifest.xml"
 if [ -f "$MANIFEST" ]; then
@@ -276,3 +281,97 @@ echo "    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'"
 echo "}" >> "$BUILD_GRADLE"
 
 echo "=== Customization Complete! ==="
+
+# ============================================================
+# 5. Firebase Cloud Messaging (FCM)
+# ============================================================
+echo "[5/5] Firebase FCM..."
+
+# Check if google-services.json exists (copied by workflow)
+FCM_FILE="app/google-services.json"
+if [ -f "$FCM_FILE" ]; then
+    echo "  google-services.json found. Adding Firebase..."
+
+    # Create NotificationService
+    cat > "app/src/main/java/$PACKAGE_PATH/NotificationService.java" << NOTIFEOF
+package $PACKAGE;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Intent;
+import android.os.Build;
+import androidx.core.app.NotificationCompat;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+
+public class NotificationService extends FirebaseMessagingService {
+    private static final String CHANNEL_ID = "webapk_notifications";
+    private static final String CHANNEL_NAME = "App Notifications";
+
+    @Override
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+        // Token can be sent to server if needed
+    }
+
+    @Override
+    public void onMessageReceived(RemoteMessage message) {
+        super.onMessageReceived(message);
+        createNotificationChannel();
+
+        String title = message.getNotification() != null ? message.getNotification().getTitle() : "$APP_NAME";
+        String body = message.getNotification() != null ? message.getNotification().getBody() : "";
+        String clickUrl = message.getData().get("url");
+
+        Intent intent;
+        if (clickUrl != null && !clickUrl.isEmpty()) {
+            intent = new Intent(this, MainActivity.class);
+            intent.putExtra("url", clickUrl);
+        } else {
+            intent = new Intent(this, MainActivity.class);
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent);
+
+        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify((int) System.currentTimeMillis(), builder.build());
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (manager != null) manager.createNotificationChannel(channel);
+        }
+    }
+}
+NOTIFEOF
+
+    # Register service in manifest
+    sed -i '/<\/application>/i\        <service android:name="'"$PACKAGE"'.NotificationService" android:exported="false">\n            <intent-filter>\n                <action android:name="com.google.firebase.MESSAGING_EVENT" />\n            </intent-filter>\n        </service>' "$MANIFEST"
+
+    # Add FCM + Firebase deps to build.gradle
+    echo "" >> "$BUILD_GRADLE"
+    echo "dependencies {" >> "$BUILD_GRADLE"
+    echo "    implementation platform('com.google.firebase:firebase-bom:32.7.0')" >> "$BUILD_GRADLE"
+    echo "    implementation 'com.google.firebase:firebase-messaging'" >> "$BUILD_GRADLE"
+    echo "}" >> "$BUILD_GRADLE"
+
+    echo "  Firebase FCM added successfully!"
+else
+    echo "  Skipping Firebase (google-services.json not found)"
+fi
