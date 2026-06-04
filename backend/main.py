@@ -1,4 +1,4 @@
-import os, uuid, json, asyncio, datetime, secrets, hashlib, zipfile, io
+import os, sys, uuid, json, asyncio, datetime, secrets, hashlib, zipfile, io
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,8 +6,12 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import bcrypt
 
+print("Importing database...", flush=True)
+sys.stdout.flush()
 from database import get_db, init_db
 
+print("Creating app...", flush=True)
+sys.stdout.flush()
 app = FastAPI(title="Website to APK Converter", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -20,11 +24,14 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 @app.on_event("startup")
 async def startup():
     print("Starting up...", flush=True)
+    sys.stdout.flush()
     try:
         await init_db()
         print("DB initialized", flush=True)
     except Exception as e:
         print(f"Startup error: {e}", flush=True)
+    print("Startup complete", flush=True)
+    sys.stdout.flush()
 
 # ─── Models ────────────────────────────────────────────────────────────────
 
