@@ -51,6 +51,9 @@ async function startBuild() {
 
   const url = document.getElementById("urlInput").value.trim();
   const name = document.getElementById("nameInput").value.trim();
+  const version = document.getElementById("versionInput").value.trim() || "1.0.0";
+  const pkg = document.getElementById("packageInput").value.trim() || "";
+  const icon = document.getElementById("iconInput").value.trim() || "";
 
   if (!url || !name) {
     alert("Please fill in all fields");
@@ -87,7 +90,7 @@ async function startBuild() {
       },
       body: JSON.stringify({
         ref: "main",
-        inputs: { url, app_name: name, build_id: buildId }
+        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon }
       })
     });
 
@@ -148,7 +151,8 @@ function setProgress(icon, text, info, percent) {
 function showDownload(url, appName) {
   document.getElementById("progress").classList.add("hidden");
   document.getElementById("downloadArea").classList.remove("hidden");
-  document.getElementById("downloadAppName").textContent = appName;
+  const ver = document.getElementById("versionInput").value.trim() || "1.0.0";
+  document.getElementById("downloadAppName").textContent = appName + " v" + ver;
   document.getElementById("downloadLink").href = url;
   enableBuildBtn();
 }

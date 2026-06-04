@@ -11,6 +11,34 @@ on:
       build_id:
         description: "Build ID"
         required: true
+      package_name:
+        description: "Package Name (optional, e.g. com.mycompany.myapp)"
+        required: false
+        default: ""
+      app_version:
+        description: "App Version (optional, e.g. 1.0.0)"
+        required: false
+        default: "1.0.0"
+      icon_url:
+        description: "App Icon URL (optional, square PNG 512x512)"
+        required: false
+        default: ""
+      keystore_b64:
+        description: "Keystore Base64 (optional, for signing)"
+        required: false
+        default: ""
+      keystore_pass:
+        description: "Keystore Password (optional)"
+        required: false
+        default: ""
+      key_alias:
+        description: "Key Alias (optional)"
+        required: false
+        default: ""
+      key_pass:
+        description: "Key Password (optional)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -39,17 +67,48 @@ jobs:
           npm init -y
           npm install @capacitor/cli @capacitor/core @capacitor/android
           SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
-          npx cap init "${{ inputs.app_name }}" "com.webapk.${SAFE_NAME}" --web-dir www --skip-appid-validation
+          PKG_NAME="${{ inputs.package_name }}"
+          if [ -z "$PKG_NAME" ]; then
+            PKG_NAME="com.webapk.${SAFE_NAME}"
+          fi
+          npx cap init "${{ inputs.app_name }}" "$PKG_NAME" --web-dir www --skip-appid-validation
           mkdir -p www
-          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Loading</title><style>*{margin:0;padding:0}body{background:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#555}</style></head><body><div><h2>Loading ${{ inputs.app_name }}...</h2></div></body></html>' > www/index.html
-          printf '{"appId":"com.webapk.%s","appName":"%s","webDir":"www","server":{"url":"%s","allowNavigation":["*"],"cleartext":true},"android":{"allowMixedContent":true,"webContentsDebuggingEnabled":false}}' "$SAFE_NAME" "${{ inputs.app_name }}" "${{ inputs.url }}" > capacitor.config.json
+          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${{ inputs.app_name }}</title><style>*{margin:0;padding:0}body{background:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#555}</style></head><body><div><h2>Loading ${{ inputs.app_name }}...</h2></div></body></html>' > www/index.html
+          printf '{"appId":"%s","appName":"%s","versionName":"%s","versionCode":1,"webDir":"www","server":{"url":"%s","allowNavigation":["*"],"cleartext":true},"android":{"allowMixedContent":true,"webContentsDebuggingEnabled":false}}' "$PKG_NAME" "${{ inputs.app_name }}" "${{ inputs.app_version }}" "${{ inputs.url }}" > capacitor.config.json
           npx cap add android
+          # Save package name for later steps
+          echo "PKG_NAME=$PKG_NAME" >> $GITHUB_ENV
+          echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
 
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
-          SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
-          ./scripts/customize-android.sh /tmp/android "com.webapk.${SAFE_NAME}" "${{ inputs.app_name }}" "${{ inputs.url }}"
+          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}"
+
+      - name: Custom Icon
+        if: ${{ inputs.icon_url != '' }}
+        run: |
+          cd /tmp/android/app/src/main/res
+          mkdir -p mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi
+          curl -sL "${{ inputs.icon_url }}" -o /tmp/icon.png
+          # Convert to various densities using ImageMagick
+          convert /tmp/icon.png -resize 48x48 mipmap-mdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 72x72 mipmap-hdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 96x96 mipmap-xhdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 144x144 mipmap-xxhdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 192x192 mipmap-xxxhdpi/ic_launcher.png
+          # Also generate foreground (same as launcher for simplicity)
+          for dir in mipmap-*; do
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+
+      - name: Set Version in Build
+        run: |
+          VERSION="${{ inputs.app_version }}"
+          VCODE=$(echo "$VERSION" | awk -F. '{print ($1*10000)+($2*100)+$3}')
+          sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" /tmp/android/app/build.gradle
+          sed -i "s|versionCode .*|versionCode $VCODE|" /tmp/android/app/build.gradle
 
       - name: Configure Gradle
         run: |
@@ -63,16 +122,37 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      - name: Sign APK with custom keystore
+        if: ${{ inputs.keystore_b64 != '' }}
+        run: |
+          echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/keystore.jks
+          cd /tmp/android
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-unsigned.apk
+          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
+            -keystore /tmp/keystore.jks \
+            -storepass "${{ inputs.keystore_pass }}" \
+            -keypass "${{ inputs.key_pass }}" \
+            app/build/outputs/apk/debug/app-debug.apk \
+            "${{ inputs.key_alias }}"
+          # Zipalign (from Android SDK)
+          $ANDROID_HOME/build-tools/*/zipalign -f 4 \
+            app/build/outputs/apk/debug/app-debug.apk \
+            /tmp/app-signed.apk
+          mv /tmp/app-signed.apk app/build/outputs/apk/debug/app-debug.apk
+
       - name: Rename APK
-        run: cp /tmp/android/app/build/outputs/apk/debug/app-debug.apk /tmp/app.apk
+        run: |
+          SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+          VERSION="${{ inputs.app_version }}"
+          cp /tmp/android/app/build/outputs/apk/debug/app-debug.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
 
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ inputs.build_id }}
-          name: ${{ inputs.app_name }}
-          body: "APK for ${{ inputs.app_name }} - ${{ inputs.url }}"
-          files: /tmp/app.apk
+          name: ${{ inputs.app_name }} v${{ inputs.app_version }}
+          body: "📱 ${{ inputs.app_name }} v${{ inputs.app_version }}\n🌐 ${{ inputs.url }}\n📦 ${{ env.PKG_NAME }}"
+          files: /tmp/*.apk
           draft: false
           prerelease: false
         env:
@@ -81,7 +161,7 @@ jobs:
       - name: Write Status JSON
         run: |
           mkdir -p docs/builds
-          echo "{\"status\":\"completed\",\"app_name\":\"${{ inputs.app_name }}\",\"build_id\":\"${{ inputs.build_id }}\",\"download_url\":\"https://github.com/${{ github.repository }}/releases/tag/build-${{ inputs.build_id }}\"}" > docs/builds/${{ inputs.build_id }}.json
+          echo "{\"status\":\"completed\",\"app_name\":\"${{ inputs.app_name }}\",\"version\":\"${{ inputs.app_version }}\",\"build_id\":\"${{ inputs.build_id }}\",\"download_url\":\"https://github.com/${{ github.repository }}/releases/tag/build-${{ inputs.build_id }}\"}" > docs/builds/${{ inputs.build_id }}.json
 
       - name: Commit Status
         run: |
