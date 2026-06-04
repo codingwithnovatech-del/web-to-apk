@@ -125,14 +125,14 @@ async def start_build(req: BuildRequest, request: Request):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "ref": "main",
-                    "inputs": {
+                    "event_type": "build-apk",
+                    "client_payload": {
                         "url": req.url,
                         "app_name": req.app_name,
                         "build_id": build_id
@@ -409,14 +409,14 @@ async def rebuild_apk(build_id: str, user: dict = Depends(check_admin)):
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "ref": "main",
-                    "inputs": {
+                    "event_type": "build-apk",
+                    "client_payload": {
                         "url": row["url"],
                         "app_name": row["app_name"],
                         "build_id": new_id
