@@ -1,5 +1,6 @@
 import aiosqlite
 import os
+import bcrypt
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "data", "app.db")
 
@@ -73,5 +74,17 @@ async def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    # Create default admin if no users exist
+    cursor = await db.execute("SELECT COUNT(*) as c FROM users")
+    row = await cursor.fetchone()
+    if row["c"] == 0:
+        admin_user = os.getenv("ADMIN_USERNAME", "admin")
+        admin_pass = os.getenv("ADMIN_PASSWORD", "admin123")
+        hashed = bcrypt.hashpw(admin_pass.encode(), bcrypt.gensalt()).decode()
+        await db.execute(
+            "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+            (admin_user, "admin@webapk.local", hashed, "superadmin")
+        )
+
     await db.commit()
     await db.close()
