@@ -121,18 +121,18 @@ async def start_build(req: BuildRequest, request: Request):
     await db.commit()
     await db.close()
 
-    # Trigger GitHub Actions workflow via repository_dispatch
+    # Trigger GitHub Actions workflow
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"https://api.github.com/repos/{REPO}/dispatches",
+                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "event_type": "build-apk",
-                    "client_payload": {
+                    "ref": "main",
+                    "inputs": {
                         "url": req.url,
                         "app_name": req.app_name,
                         "build_id": build_id
@@ -405,18 +405,18 @@ async def rebuild_apk(build_id: str, user: dict = Depends(check_admin)):
     await db.commit()
     await db.close()
 
-    # Trigger GitHub Action via repository_dispatch
+    # Trigger GitHub Action
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             await client.post(
-                f"https://api.github.com/repos/{REPO}/dispatches",
+                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "event_type": "build-apk",
-                    "client_payload": {
+                    "ref": "main",
+                    "inputs": {
                         "url": row["url"],
                         "app_name": row["app_name"],
                         "build_id": new_id
