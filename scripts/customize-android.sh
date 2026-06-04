@@ -59,6 +59,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -90,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setTheme(R.style.Theme_AppCompat_Light_NoActionBar);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setAllowFileAccess(true);
         webView.getSettings().setAllowContentAccess(true);
         webView.getSettings().setMixedContentMode(0);
-        webView.getSettings().setLoadWithOverviewView(true);
+        webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setBuiltInZoomControls(false);
         webView.getSettings().setDisplayZoomControls(false);
