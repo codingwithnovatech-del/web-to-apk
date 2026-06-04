@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website to APK Converter</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">📱</div>
+      <h1>Website to APK</h1>
+      <p class="subtitle">Enter any website URL & convert it into an Android APK instantly</p>
+    </div>
+
+    <div class="form-card">
+      <div class="form-group">
+        <label for="urlInput">Website URL</label>
+        <input type="url" id="urlInput" placeholder="https://example.com" required>
+      </div>
+      <div class="form-group">
+        <label for="nameInput">App Name</label>
+        <input type="text" id="nameInput" placeholder="My Awesome App" required maxlength="50">
+      </div>
+      <button id="buildBtn" onclick="startBuild()">
+        <span class="btn-icon">⚡</span>
+        Build APK
+      </button>
+    </div>
+
+    <div id="progress" class="hidden">
+      <div class="progress-card">
+        <div class="progress-header">
+          <span id="statusIcon">⏳</span>
+          <span id="statusText">Starting build...</span>
+        </div>
+        <div class="progress-bar">
+          <div id="progressFill"></div>
+        </div>
+        <p class="progress-info" id="progressInfo">This usually takes 3-5 minutes</p>
+      </div>
+    </div>
+
+    <div id="downloadArea" class="hidden">
+      <div class="download-card">
+        <div class="success-icon">✅</div>
+        <h2>Build Complete!</h2>
+        <p id="downloadAppName" class="download-app-name"></p>
+        <a id="downloadLink" class="download-btn" target="_blank">
+          <span>⬇</span> Download APK
+        </a>
+        <button class="new-build-btn" onclick="resetForm()">+ Convert Another</button>
+      </div>
+    </div>
+
+    <div id="errorArea" class="hidden">
+      <div class="error-card">
+        <div class="error-icon">❌</div>
+        <h2>Build Failed</h2>
+        <p id="errorMessage"></p>
+        <button class="new-build-btn" onclick="resetForm()">Try Again</button>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="feature">
+        <span class="feature-icon">⚡</span>
+        <h3>Fast</h3>
+        <p>APK ready in 3-5 minutes</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🔒</span>
+        <h3>Secure</h3>
+        <p>Your data is private</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📱</span>
+        <h3>WebView App</h3>
+        <p>Full-screen browser experience</p>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">🆓</span>
+        <h3>Free</h3>
+        <p>No hidden charges</p>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
