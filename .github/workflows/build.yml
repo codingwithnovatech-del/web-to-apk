@@ -1,0 +1,60 @@
+name: Build APK
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Website URL"
+        required: true
+      app_name:
+        description: "App Name"
+        required: true
+      build_id:
+        description: "Build ID"
+        required: true
+
+env:
+  CALLBACK_URL: "https://web-to-apk-production.up.railway.app"
+  CALLBACK_SECRET: "webapk-secret-2024"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: 17
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Notify Building
+        run: |
+          echo "Build started for build_id=${{ inputs.build_id }}"
+      - name: Create Project
+        run: |
+          cd /tmp
+          npm init -y
+          npm install @capacitor/cli @capacitor/core @capacitor/android
+          SAFE_NAME=$(echo "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-')
+          npx cap init "${{ inputs.app_name }}" "com.webapk.${SAFE_NAME}" --web-dir www
+          mkdir -p www
+          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><title>${{ inputs.app_name }}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:none}</style></head><body><iframe src="${{ inputs.url }}" allow="geolocation;camera;microphone"></iframe></body></html>' > www/index.html
+          npx cap add android
+      - name: Build APK
+        run: |
+          cd /tmp/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Rename
+        run: cp /tmp/android/app/build/outputs/apk/debug/app-debug.apk /tmp/app.apk
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ inputs.app_name }}.apk"
+          path: /tmp/app.apk
+          retention-days: 7
