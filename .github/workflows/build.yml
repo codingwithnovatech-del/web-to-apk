@@ -46,18 +46,17 @@ jobs:
           echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><title>${{ inputs.app_name }}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:none}</style></head><body><iframe src="${{ inputs.url }}" allow="geolocation;camera;microphone"></iframe></body></html>' > www/index.html
           npx cap add android
       - name: Configure Gradle
+        shell: bash
         run: |
-          python3 -c "
+          python3 << 'PYEOF'
 import re
 with open('/tmp/android/app/build.gradle', 'r+') as f:
     content = f.read()
     if 'configurations.all' not in content:
-        insert = \"configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }\n\"
-        content = insert + content
         f.seek(0)
-        f.write(content)
+        f.write("configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }\n" + content)
         f.truncate()
-"
+PYEOF
       - name: Build APK
         run: |
           cd /tmp/android
