@@ -2,7 +2,8 @@ import os, uuid, json, asyncio, datetime, secrets, hashlib, zipfile, io
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import bcrypt
 
@@ -829,6 +830,18 @@ async def build_status_webhook(data: dict, request: Request):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+# ─── Static Frontend ───────────────────────────────────────────────────────
+
+FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_spa(full_path: str):
+    """Catch-all route: serve index.html for any unmatched path (SPA routing)."""
+    index = os.path.join(FRONTEND_DIR, "index.html")
+    return FileResponse(index)
+
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn
