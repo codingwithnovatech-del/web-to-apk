@@ -19,7 +19,12 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 @app.on_event("startup")
 async def startup():
-    await init_db()
+    print("Starting up...", flush=True)
+    try:
+        await init_db()
+        print("DB initialized", flush=True)
+    except Exception as e:
+        print(f"Startup error: {e}", flush=True)
 
 # ─── Models ────────────────────────────────────────────────────────────────
 
