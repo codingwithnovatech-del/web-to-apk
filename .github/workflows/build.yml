@@ -41,7 +41,8 @@ jobs:
           SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
           npx cap init "${{ inputs.app_name }}" "com.webapk.${SAFE_NAME}" --web-dir www --skip-appid-validation
           mkdir -p www
-          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><title>${{ inputs.app_name }}</title><style>*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:none}</style></head><body><iframe src="${{ inputs.url }}" allow="geolocation;camera;microphone"></iframe></body></html>' > www/index.html
+          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Loading</title><style>*{margin:0;padding:0}body{background:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#555}</style></head><body><div><h2>Loading ${{ inputs.app_name }}...</h2></div></body></html>' > www/index.html
+          printf '{"appId":"com.webapk.%s","appName":"%s","webDir":"www","server":{"url":"%s","allowNavigation":["*"],"cleartext":true},"android":{"allowMixedContent":true,"webContentsDebuggingEnabled":false}}' "$SAFE_NAME" "${{ inputs.app_name }}" "${{ inputs.url }}" > capacitor.config.json
           npx cap add android
 
       - name: Configure Gradle
