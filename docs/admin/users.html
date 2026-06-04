@@ -72,6 +72,82 @@
   </div>
 
   <script src="app.js"></script>
-  <script>loadUsers();</script>
+  <script>
+    const USERS_KEY = "webapk_users";
+
+    function getUsers() {
+      const d = localStorage.getItem(USERS_KEY);
+      if (d) return JSON.parse(d);
+      const defaults = [
+        { id: 1, username: "admin", email: "admin@webtoapk.com", password: "admin123", role: "superadmin", active: true, rateLimit: 100, lastLogin: new Date().toISOString() }
+      ];
+      localStorage.setItem(USERS_KEY, JSON.stringify(defaults));
+      return defaults;
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
+    function loadUsers() {
+      const users = getUsers();
+      const tbody = document.getElementById("usersTableBody");
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.email}</td>
+          <td><span class="badge ${u.role === 'superadmin' ? 'badge-danger' : 'badge-primary'}">${u.role}</span></td>
+          <td>${u.active ? '✅' : '❌'}</td>
+          <td>${u.rateLimit}/day</td>
+          <td>${new Date(u.lastLogin).toLocaleDateString()}</td>
+          <td class="action-cell">
+            <button class="btn-icon" onclick="toggleUser(${u.id})" title="${u.active ? 'Disable' : 'Enable'}">${u.active ? '🔒' : '🔓'}</button>
+            <button class="btn-icon" onclick="deleteUser(${u.id})" title="Delete">🗑️</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function showAddUserModal() {
+      document.getElementById("addUserModal").classList.remove("hidden");
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+    }
+
+    function createUser() {
+      const users = getUsers();
+      const username = document.getElementById("newUsername").value.trim();
+      const email = document.getElementById("newEmail").value.trim();
+      const password = document.getElementById("newPassword").value.trim();
+      const role = document.getElementById("newRole").value;
+      const rateLimit = parseInt(document.getElementById("newRateLimit").value) || 10;
+      if (!username || !email || !password) { alert("Fill all fields"); return; }
+      if (users.find(u => u.username === username)) { alert("Username exists"); return; }
+      users.push({ id: Date.now(), username, email, password, role, active: true, rateLimit, lastLogin: "" });
+      saveUsers(users);
+      loadUsers();
+      closeModal("addUserModal");
+      document.getElementById("newUsername").value = "";
+      document.getElementById("newEmail").value = "";
+      document.getElementById("newPassword").value = "";
+    }
+
+    function toggleUser(id) {
+      const users = getUsers();
+      const u = users.find(x => x.id === id);
+      if (u) { u.active = !u.active; saveUsers(users); loadUsers(); }
+    }
+
+    function deleteUser(id) {
+      if (!confirm("Delete this user?")) return;
+      let users = getUsers();
+      users = users.filter(u => u.id !== id);
+      saveUsers(users);
+      loadUsers();
+    }
+  </script>
 </body>
 </html>
