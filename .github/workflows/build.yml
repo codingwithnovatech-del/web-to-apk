@@ -45,6 +45,12 @@ jobs:
           printf '{"appId":"com.webapk.%s","appName":"%s","webDir":"www","server":{"url":"%s","allowNavigation":["*"],"cleartext":true},"android":{"allowMixedContent":true,"webContentsDebuggingEnabled":false}}' "$SAFE_NAME" "${{ inputs.app_name }}" "${{ inputs.url }}" > capacitor.config.json
           npx cap add android
 
+      - name: Customize Android Project
+        run: |
+          chmod +x scripts/customize-android.sh
+          SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+          ./scripts/customize-android.sh /tmp/android "com.webapk.${SAFE_NAME}" "${{ inputs.app_name }}" "${{ inputs.url }}"
+
       - name: Configure Gradle
         run: |
           echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }" > /tmp/build_header.tmp
