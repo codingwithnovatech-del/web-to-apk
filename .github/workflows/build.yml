@@ -47,7 +47,17 @@ jobs:
           npx cap add android
       - name: Configure Gradle
         run: |
-          sed -i '/^android {/a\    packaging { resources { excludes += ["META-INF/DEPENDENCIES"] } }' /tmp/android/app/build.gradle
+          python3 -c "
+import re
+with open('/tmp/android/app/build.gradle', 'r+') as f:
+    content = f.read()
+    if 'configurations.all' not in content:
+        insert = \"configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }\n\"
+        content = insert + content
+        f.seek(0)
+        f.write(content)
+        f.truncate()
+"
       - name: Build APK
         run: |
           cd /tmp/android
