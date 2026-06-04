@@ -71,7 +71,7 @@ async function startBuild() {
   progress.classList.remove("hidden");
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span> Starting...';
+  btn.innerHTML = '<span>⏳</span> Starting...';
 
   const buildId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -150,22 +150,25 @@ function showDownload(url, appName) {
   document.getElementById("downloadArea").classList.remove("hidden");
   document.getElementById("downloadAppName").textContent = appName;
   document.getElementById("downloadLink").href = url;
-  document.getElementById("buildBtn").disabled = false;
-  document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
+  enableBuildBtn();
 }
 
 function showError(message) {
   document.getElementById("progress").classList.add("hidden");
   document.getElementById("errorArea").classList.remove("hidden");
   document.getElementById("errorMessage").textContent = message;
-  document.getElementById("buildBtn").disabled = false;
-  document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
+  enableBuildBtn();
+}
+
+function enableBuildBtn() {
+  const btn = document.getElementById("buildBtn");
+  btn.disabled = false;
+  btn.innerHTML = '<span>⚡</span> Build APK';
 }
 
 function resetForm() {
   document.getElementById("downloadArea").classList.add("hidden");
   document.getElementById("errorArea").classList.add("hidden");
   document.getElementById("progress").classList.add("hidden");
-  document.getElementById("buildBtn").disabled = false;
-  document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
+  enableBuildBtn();
 }

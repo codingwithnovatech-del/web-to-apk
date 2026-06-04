@@ -3,124 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website to APK Converter</title>
+  <title>WebToAPK - Convert Website to Android App Free</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Login Screen -->
-  <div id="loginScreen">
-    <div class="container">
-      <div class="header">
-        <div class="logo">📱</div>
-        <h1>Website to APK</h1>
-        <p class="subtitle">Convert any website into an Android APK</p>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <div class="nav-brand">📱 WebToAPK</div>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how">How It Works</a>
+        <a href="#converter" class="nav-cta">Start Free</a>
       </div>
-      <div class="form-card">
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🚀 FREE ONLINE TOOL</div>
+      <h1>Website to <span class="gradient-text">Android APK</span></h1>
+      <p class="hero-sub">Convert any website into a professional Android app instantly. No coding required. 100% free.</p>
+      <a href="#converter" class="hero-cta">
+        <span>⚡</span> Start Converting
+      </a>
+      <div class="hero-stats">
+        <div class="stat"><strong>2 min</strong> Build Time</div>
+        <div class="stat"><strong>100%</strong> Free</div>
+        <div class="stat"><strong>APK</strong> Output</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURES ===== -->
+  <section class="features" id="features">
+    <h2 class="section-title">Why Choose <span class="gradient-text">WebToAPK</span>?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="fc-icon">⚡</div>
+        <h3>Instant Conversion</h3>
+        <p>Your APK is ready in under 3 minutes. Just enter your URL and we handle everything.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📱</div>
+        <h3>Full WebView App</h3>
+        <p>Navigation buttons, pull-to-refresh, progress bar, offline support — all built-in.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🔓</div>
+        <h3>100% Free</h3>
+        <p>No hidden charges, no credit card. Convert unlimited websites to APK for free.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📦</div>
+        <h3>Google Play Ready</h3>
+        <p>Download your APK and publish it on Google Play Store or any other app store.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🎨</div>
+        <h3>Custom App Name</h3>
+        <p>Set your own app name and branding. Your app, your identity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">🔄</div>
+        <h3>Always Updated</h3>
+        <p>Your app mirrors your website. Update your site, your app updates automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-it-works" id="how">
+    <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Enter URL</h3>
+          <p>Paste your website URL and choose your app name.</p>
+        </div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Build APK</h3>
+          <p>Click build and wait 2-3 minutes while we compile your app.</p>
+        </div>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Download & Install</h3>
+          <p>Download your APK and install it on any Android device.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONVERTER SECTION ===== -->
+  <section class="converter-section" id="converter">
+
+    <!-- Login Form -->
+    <div id="loginScreen">
+      <div class="converter-card">
+        <div class="card-header">
+          <span>🔑</span>
+          <h2>Login to Continue</h2>
+          <p>Enter your details to start building</p>
+        </div>
         <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="loginUser" placeholder="Enter your name" maxlength="30">
+          <label>Your Name</label>
+          <input type="text" id="loginUser" placeholder="Enter your name">
         </div>
         <div class="form-group">
           <label>GitHub Token</label>
           <input type="password" id="loginToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-          <p class="field-hint">Required to trigger builds via GitHub API</p>
+          <p class="field-hint">Required for GitHub API. <a href="https://github.com/settings/tokens" target="_blank">Create token →</a></p>
         </div>
-        <button id="loginBtn">
-          <span class="btn-icon">🔑</span>
-          Login
-        </button>
-        <p class="auth-footer">Token stored locally. <a href="https://github.com/settings/tokens" target="_blank">Get token</a></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Main App Screen -->
-  <div id="appScreen" class="hidden">
-    <div class="container">
-      <div class="top-bar">
-        <span id="greeting" class="greeting"></span>
-        <button class="logout-btn" id="logoutBtn">Logout</button>
-      </div>
-
-      <div class="header">
-        <div class="logo">📱</div>
-        <h1>Website to APK</h1>
-        <p class="subtitle">Enter any website URL & convert it into an Android APK instantly</p>
-      </div>
-
-      <div class="form-card">
-        <div class="form-group">
-          <label for="urlInput">Website URL</label>
-          <input type="url" id="urlInput" placeholder="https://example.com" required>
-        </div>
-        <div class="form-group">
-          <label for="nameInput">App Name</label>
-          <input type="text" id="nameInput" placeholder="My Awesome App" required maxlength="50">
-        </div>
-        <button id="buildBtn">
-          <span class="btn-icon">⚡</span>
-          Build APK
+        <button id="loginBtn" class="btn-primary">
+          <span>🔑</span> Login
         </button>
       </div>
+    </div>
 
-      <div id="progress" class="hidden">
-        <div class="progress-card">
-          <div class="progress-header">
-            <span id="statusIcon">⏳</span>
-            <span id="statusText">Starting build...</span>
-          </div>
-          <div class="progress-bar">
-            <div id="progressFill"></div>
-          </div>
-          <p class="progress-info" id="progressInfo">This usually takes 3-5 minutes</p>
+    <!-- Build Form -->
+    <div id="appScreen" class="hidden">
+      <div class="converter-card">
+        <div class="card-header">
+          <span>⚡</span>
+          <h2>Build Your APK</h2>
+          <p>Enter your website URL and app name</p>
         </div>
-      </div>
-
-      <div id="downloadArea" class="hidden">
-        <div class="download-card">
-          <div class="success-icon">✅</div>
-          <h2>Build Complete!</h2>
-          <p id="downloadAppName" class="download-app-name"></p>
-          <a id="downloadLink" class="download-btn" target="_blank">
-            <span>⬇</span> Download APK
-          </a>
-          <button class="new-build-btn" id="resetBtn1">+ Convert Another</button>
+        <div class="top-bar">
+          <span id="greeting" class="greeting"></span>
+          <button id="logoutBtn" class="btn-text">Logout</button>
         </div>
-      </div>
-
-      <div id="errorArea" class="hidden">
-        <div class="error-card">
-          <div class="error-icon">❌</div>
-          <h2>Build Failed</h2>
-          <p id="errorMessage"></p>
-          <button class="new-build-btn" id="resetBtn2">Try Again</button>
+        <div class="form-group">
+          <label>Website URL</label>
+          <input type="url" id="urlInput" placeholder="https://example.com">
         </div>
-      </div>
-
-      <div class="features">
-        <div class="feature">
-          <span class="feature-icon">⚡</span>
-          <h3>Fast</h3>
-          <p>APK ready in 3-5 minutes</p>
+        <div class="form-group">
+          <label>App Name</label>
+          <input type="text" id="nameInput" placeholder="My Awesome App" maxlength="50">
         </div>
-        <div class="feature">
-          <span class="feature-icon">🔒</span>
-          <h3>Secure</h3>
-          <p>Your data is private</p>
-        </div>
-        <div class="feature">
-          <span class="feature-icon">📱</span>
-          <h3>WebView App</h3>
-          <p>Full-screen browser experience</p>
-        </div>
-        <div class="feature">
-          <span class="feature-icon">🆓</span>
-          <h3>Free</h3>
-          <p>No hidden charges</p>
-        </div>
+        <button id="buildBtn" class="btn-primary btn-build">
+          <span>⚡</span> Build APK
+        </button>
       </div>
     </div>
-  </div>
+
+    <!-- Progress -->
+    <div id="progress" class="hidden">
+      <div class="progress-card">
+        <div class="progress-header">
+          <span id="statusIcon">⏳</span>
+          <span id="statusText">Starting build...</span>
+        </div>
+        <div class="progress-bar"><div id="progressFill"></div></div>
+        <p class="progress-info" id="progressInfo">This takes 2-3 minutes</p>
+      </div>
+    </div>
+
+    <!-- Download -->
+    <div id="downloadArea" class="hidden">
+      <div class="result-card success">
+        <div class="result-icon">✅</div>
+        <h2>Build Complete!</h2>
+        <p id="downloadAppName" class="result-name"></p>
+        <a id="downloadLink" class="btn-primary btn-download" target="_blank">
+          <span>⬇</span> Download APK
+        </a>
+        <button id="resetBtn1" class="btn-text">+ Convert Another</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorArea" class="hidden">
+      <div class="result-card error">
+        <div class="result-icon">❌</div>
+        <h2>Build Failed</h2>
+        <p id="errorMessage" class="result-name"></p>
+        <button id="resetBtn2" class="btn-text">Try Again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <p>© 2026 <strong>WebToAPK</strong> — Free Website to Android APK Converter</p>
+    <p class="footer-links">
+      Built with ❤️ | <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank">GitHub</a>
+    </p>
+  </footer>
+
   <script src="script.js"></script>
 </body>
 </html>
