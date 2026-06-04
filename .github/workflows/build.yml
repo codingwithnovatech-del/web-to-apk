@@ -103,12 +103,53 @@ jobs:
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
           done
 
-      - name: Set Version in Build
+      - name: Set Version + Keystore + Release Config
         run: |
+          cd /tmp/android
+
+          # Set version
           VERSION="${{ inputs.app_version }}"
           VCODE=$(echo "$VERSION" | awk -F. '{print ($1*10000)+($2*100)+$3}')
-          sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" /tmp/android/app/build.gradle
-          sed -i "s|versionCode .*|versionCode $VCODE|" /tmp/android/app/build.gradle
+          sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" app/build.gradle
+          sed -i "s|versionCode .*|versionCode $VCODE|" app/build.gradle
+
+          # Generate or use provided keystore
+          if [ -n "${{ inputs.keystore_b64 }}" ]; then
+            echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/release.keystore
+            STORE_PASS="${{ inputs.keystore_pass }}"
+            KEY_ALIAS="${{ inputs.key_alias }}"
+            KEY_PASS="${{ inputs.key_pass }}"
+          else
+            STORE_PASS="webtoapk"
+            KEY_ALIAS="webtoapk"
+            KEY_PASS="webtoapk"
+            keytool -genkey -v -keystore /tmp/release.keystore \
+              -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
+              -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
+          fi
+
+          # Inject release signing config into build.gradle
+          cat >> app/build.gradle << GRADLEEOF
+
+android {
+    signingConfigs {
+        release {
+            storeFile file("/tmp/release.keystore")
+            storePassword "$STORE_PASS"
+            keyAlias "$KEY_ALIAS"
+            keyPassword "$KEY_PASS"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+GRADLEEOF
 
       - name: Configure Gradle
         run: |
@@ -116,43 +157,35 @@ jobs:
           cat /tmp/android/app/build.gradle >> /tmp/build_header.tmp
           mv /tmp/build_header.tmp /tmp/android/app/build.gradle
 
-      - name: Build APK
+      - name: Build Release APK
         run: |
           cd /tmp/android
           chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Sign APK with custom keystore
-        if: ${{ inputs.keystore_b64 != '' }}
-        run: |
-          echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/keystore.jks
-          cd /tmp/android
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/app-unsigned.apk
-          jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 \
-            -keystore /tmp/keystore.jks \
-            -storepass "${{ inputs.keystore_pass }}" \
-            -keypass "${{ inputs.key_pass }}" \
-            app/build/outputs/apk/debug/app-debug.apk \
-            "${{ inputs.key_alias }}"
-          # Zipalign (from Android SDK)
-          $ANDROID_HOME/build-tools/*/zipalign -f 4 \
-            app/build/outputs/apk/debug/app-debug.apk \
-            /tmp/app-signed.apk
-          mv /tmp/app-signed.apk app/build/outputs/apk/debug/app-debug.apk
+          ./gradlew assembleRelease
 
       - name: Rename APK
         run: |
           SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
           VERSION="${{ inputs.app_version }}"
-          cp /tmp/android/app/build/outputs/apk/debug/app-debug.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
+          cp /tmp/android/app/build/outputs/apk/release/app-release.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
 
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ inputs.build_id }}
           name: ${{ inputs.app_name }} v${{ inputs.app_version }}
-          body: "📱 ${{ inputs.app_name }} v${{ inputs.app_version }}\n🌐 ${{ inputs.url }}\n📦 ${{ env.PKG_NAME }}"
-          files: /tmp/*.apk
+          body: |
+            📱 **${{ inputs.app_name }}** v${{ inputs.app_version }}
+            🌐 ${{ inputs.url }}
+            📦 ${{ env.PKG_NAME }}
+            
+            🔑 **Keystore file included** — save it to publish updates to Play Store.
+            - Keystore password: `webtoapk`
+            - Key alias: `webtoapk`
+            - Key password: `webtoapk`
+          files: |
+            /tmp/*.apk
+            /tmp/release.keystore
           draft: false
           prerelease: false
         env:
