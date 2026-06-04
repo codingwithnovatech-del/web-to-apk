@@ -121,24 +121,25 @@ async def start_build(req: BuildRequest, request: Request):
     await db.commit()
     await db.close()
 
-    # Trigger GitHub Actions workflow
+    # Trigger GitHub Actions workflow via repository_dispatch
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "ref": "main",
-                    "inputs": {
+                    "event_type": "build-apk",
+                    "client_payload": {
                         "url": req.url,
-                        "app_name": req.app_name
+                        "app_name": req.app_name,
+                        "build_id": build_id
                     }
                 }
             )
-            if resp.status_code not in (204, 201, 422):
+            if resp.status_code not in (204, 201):
                 db = await get_db()
                 await db.execute("UPDATE builds SET status = 'failed', error_log = ? WHERE id = ?",
                     (f"GitHub trigger failed: {resp.status_code}", build_id))
@@ -404,18 +405,22 @@ async def rebuild_apk(build_id: str, user: dict = Depends(check_admin)):
     await db.commit()
     await db.close()
 
-    # Trigger GitHub Action
+    # Trigger GitHub Action via repository_dispatch
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 json={
-                    "ref": "main",
-                    "inputs": {"url": row["url"], "app_name": row["app_name"]}
+                    "event_type": "build-apk",
+                    "client_payload": {
+                        "url": row["url"],
+                        "app_name": row["app_name"],
+                        "build_id": new_id
+                    }
                 }
             )
         except:
@@ -783,6 +788,41 @@ async def delete_backup(backup_file: str, user: dict = Depends(check_superadmin)
         raise HTTPException(404, "Backup file not found")
     os.remove(backup_path)
     return {"message": "Backup deleted"}
+
+# ─── Webhook (callback from GitHub Actions) ───────────────────────────────
+
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "webapk-secret-2024")
+
+@app.post("/api/webhook/build-status")
+async def build_status_webhook(data: dict, request: Request):
+    secret = request.headers.get("X-Webhook-Secret", "")
+    if secret != WEBHOOK_SECRET:
+        raise HTTPException(401, "Invalid secret")
+
+    build_id = data.get("build_id", "")
+    status = data.get("status", "")
+    error_log = data.get("error", "")
+    duration = data.get("duration")
+
+    if not build_id or not status:
+        raise HTTPException(400, "build_id and status required")
+
+    db = await get_db()
+    if status == "building":
+        await db.execute("UPDATE builds SET status = 'building' WHERE id = ?", (build_id,))
+    elif status == "completed":
+        await db.execute(
+            "UPDATE builds SET status = 'completed', completed_at = CURRENT_TIMESTAMP, build_duration = ? WHERE id = ?",
+            (duration, build_id)
+        )
+    elif status == "failed":
+        await db.execute(
+            "UPDATE builds SET status = 'failed', error_log = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (error_log, build_id)
+        )
+    await db.commit()
+    await db.close()
+    return {"message": "Status updated"}
 
 # ─── Health ────────────────────────────────────────────────────────────────
 
