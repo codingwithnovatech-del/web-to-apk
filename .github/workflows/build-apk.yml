@@ -5,8 +5,8 @@ on:
     types: [build-apk]
 
 env:
-  CALLBACK_URL: ${{ vars.API_URL || 'https://web-to-apk-production.up.railway.app' }}
-  CALLBACK_SECRET: ${{ secrets.WEBHOOK_SECRET || 'webapk-secret-2024' }}
+  CALLBACK_URL: https://web-to-apk-production.up.railway.app
+  CALLBACK_SECRET: webapk-secret-2024
 
 jobs:
   build:
@@ -131,7 +131,7 @@ JSONEOF
     steps:
       - name: Notify Build Failed
         run: |
-          curl -s -X POST "${{ vars.API_URL || 'https://web-to-apk-production.up.railway.app' }}/api/webhook/build-status" \
+          curl -s -X POST "https://web-to-apk-production.up.railway.app/api/webhook/build-status" \
             -H "Content-Type: application/json" \
-            -H "X-Webhook-Secret: ${{ secrets.WEBHOOK_SECRET || 'webapk-secret-2024' }}" \
+            -H "X-Webhook-Secret: webapk-secret-2024" \
             -d '{"build_id":"${{ github.event.client_payload.build_id }}","status":"failed","error":"Build failed in workflow"}'
