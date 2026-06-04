@@ -15,7 +15,10 @@
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#how">How It Works</a>
+        <a href="#history">History</a>
         <a href="#converter" class="nav-cta">Start Free</a>
+        <a href="admin/" class="nav-link-icon" title="Admin">⚙️</a>
+        <button id="themeToggle" class="theme-btn" title="Toggle theme">🌙</button>
       </div>
     </div>
   </nav>
@@ -71,6 +74,16 @@
         <div class="fc-icon">🔄</div>
         <h3>Always Updated</h3>
         <p>Your app mirrors your website. Update your site, your app updates automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">📦</div>
+        <h3>AAB + APK</h3>
+        <p>Both APK (direct install) and AAB (Google Play) are generated for each build.</p>
+      </div>
+      <div class="feature-card">
+        <div class="fc-icon">⬇</div>
+        <h3>File Downloads</h3>
+        <p>Download files directly from your website within the app — PDFs, images, docs.</p>
       </div>
     </div>
   </section>
@@ -163,6 +176,14 @@
           <label>App Icon URL (optional)</label>
           <input type="url" id="iconInput" placeholder="https://example.com/icon.png">
         </div>
+        <div class="form-group">
+          <label>Screen Orientation</label>
+          <select id="orientationInput">
+            <option value="default">Auto (Follow Device)</option>
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
         <button id="buildBtn" class="btn-primary btn-build">
           <span>⚡</span> Build APK
         </button>
@@ -205,11 +226,22 @@
     </div>
   </section>
 
+  <!-- ===== BUILD HISTORY ===== -->
+  <section class="history-section" id="history">
+    <h2 class="section-title">Build <span class="gradient-text">History</span></h2>
+    <div class="history-card">
+      <div id="historyList" class="history-list">
+        <p class="history-empty">No builds yet. Login and create your first APK!</p>
+      </div>
+      <button id="refreshHistory" class="btn-text">🔄 Refresh</button>
+    </div>
+  </section>
+
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <p>© 2026 <strong>WebToAPK</strong> — Free Website to Android APK Converter</p>
     <p class="footer-links">
-      Built with ❤️ | <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank">GitHub</a>
+      Built with ❤️ | <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank">GitHub</a> | <a href="admin/">Admin Panel</a>
     </p>
   </footer>
 

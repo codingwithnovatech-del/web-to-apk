@@ -39,6 +39,15 @@ on:
         description: "Key Password (optional)"
         required: false
         default: ""
+      orientation:
+        description: "Screen Orientation"
+        required: false
+        default: "default"
+        type: choice
+        options:
+          - default
+          - portrait
+          - landscape
 
 permissions:
   contents: write
@@ -83,7 +92,7 @@ jobs:
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
-          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}"
+          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
 
       - name: Custom Icon
         if: ${{ inputs.icon_url != '' }}
@@ -157,19 +166,21 @@ GRADLEEOF
           cat /tmp/android/app/build.gradle >> /tmp/build_header.tmp
           mv /tmp/build_header.tmp /tmp/android/app/build.gradle
 
-      - name: Build Release APK
+      - name: Build Release APK + AAB
         run: |
           cd /tmp/android
           chmod +x gradlew
           ./gradlew assembleRelease
+          ./gradlew bundleRelease
 
-      - name: Rename APK
+      - name: Rename APK + AAB
         run: |
           SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
           VERSION="${{ inputs.app_version }}"
           cp /tmp/android/app/build/outputs/apk/release/app-release.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
+          cp /tmp/android/app/build/outputs/bundle/release/app-release.aab "/tmp/${SAFE_NAME}-v${VERSION}.aab" || true
 
-      - name: Create Release and Upload APK
+      - name: Create Release and Upload
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ inputs.build_id }}
@@ -178,13 +189,16 @@ GRADLEEOF
             📱 **${{ inputs.app_name }}** v${{ inputs.app_version }}
             🌐 ${{ inputs.url }}
             📦 ${{ env.PKG_NAME }}
-            
-            🔑 **Keystore file included** — save it to publish updates to Play Store.
-            - Keystore password: `webtoapk`
-            - Key alias: `webtoapk`
-            - Key password: `webtoapk`
+
+            **📥 Downloads:**
+            - APK (direct install) — `*.apk`
+            - AAB (Google Play) — `*.aab`
+            - Keystore (for updates) — `*.keystore`
+
+            🔑 **Keystore:** password `webtoapk`, alias `webtoapk`
           files: |
             /tmp/*.apk
+            /tmp/*.aab
             /tmp/release.keystore
           draft: false
           prerelease: false

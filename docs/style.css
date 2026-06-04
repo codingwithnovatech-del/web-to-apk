@@ -172,6 +172,171 @@ section {
   padding: 80px 24px;
 }
 
+/* ====== SELECT INPUT ====== */
+.form-group select {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%23888' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.form-group select:focus {
+  border-color: #e94560;
+}
+
+.form-group select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+/* ====== THEME TOGGLE ====== */
+.theme-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.theme-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link-icon {
+  font-size: 1.1rem;
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.nav-link-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Light theme */
+body.light {
+  background: #f5f5fa;
+  color: #333;
+}
+
+body.light .navbar {
+  background: rgba(245, 245, 250, 0.9);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light .nav-brand,
+body.light .nav-links a {
+  color: #444;
+}
+
+body.light .hero h1 { color: #222; }
+body.light .hero-sub { color: #666; }
+body.light .stat { color: #888; }
+body.light .stat strong { color: #333; }
+body.light .feature-card { background: #fff; border-color: #e0e0e8; }
+body.light .feature-card h3 { color: #222; }
+body.light .feature-card p { color: #666; }
+body.light .step { background: #fff; border-color: #e0e0e8; }
+body.light .step-content h3 { color: #222; }
+body.light .step-content p { color: #666; }
+body.light .converter-card { background: #fff; border-color: #e0e0e8; }
+body.light .card-header h2 { color: #222; }
+body.light .card-header p { color: #666; }
+body.light .form-group label { color: #555; }
+body.light .form-group input, body.light .form-group select { background: #f0f0f5; border-color: #ddd; color: #333; }
+body.light .form-group select option { background: #fff; color: #333; }
+body.light .form-group input::placeholder { color: #aaa; }
+body.light .field-hint { color: #888; }
+body.light .greeting { color: #666; }
+body.light .top-bar { border-bottom-color: #e0e0e8; }
+body.light .progress-card { background: #fff; border-color: #e0e0e8; }
+body.light .result-card { background: #fff; }
+body.light .footer { border-top-color: #e0e0e8; color: #888; }
+body.light .footer-links { color: #aaa; }
+body.light .history-card { background: #fff; border-color: #e0e0e8; }
+body.light .history-item { border-bottom-color: #e8e8f0; }
+body.light .history-item h4 { color: #222; }
+body.light .history-item p { color: #666; }
+body.light .theme-btn:hover { background: rgba(0, 0, 0, 0.08); }
+body.light .nav-link-icon:hover { background: rgba(0, 0, 0, 0.08); }
+body.light .btn-text { color: #888; border-color: #ddd; }
+body.light .btn-text:hover { border-color: #e94560; color: #e94560; }
+
+/* ====== BUILD HISTORY ====== */
+.history-section {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.history-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.history-empty {
+  text-align: center;
+  color: #666688;
+  padding: 32px 0;
+  font-size: 0.9rem;
+}
+
+.history-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item h4 {
+  font-size: 0.95rem;
+  color: #e0e0f0;
+  margin-bottom: 2px;
+}
+
+.history-item p {
+  font-size: 0.8rem;
+  color: #8888aa;
+}
+
+.history-item a {
+  color: #e94560;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-item a:hover {
+  text-decoration: underline;
+}
+
 .section-title {
   text-align: center;
   font-size: 2rem;

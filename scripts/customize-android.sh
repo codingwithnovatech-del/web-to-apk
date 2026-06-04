@@ -1,12 +1,13 @@
 #!/bin/bash
 # customize-android.sh - Clean WebView with pull-refresh, progress bar, offline support, splash
-# Usage: ./customize-android.sh <android_project_dir> <package_name> <app_name> <url>
+# Usage: ./customize-android.sh <android_project_dir> <package_name> <app_name> <url> [orientation]
 
 set -e
 ANDROID_DIR="$1"
 PACKAGE="$2"
 APP_NAME="$3"
 URL="$4"
+ORIENTATION="${5:-default}"
 
 echo "=== Customizing Android Project ==="
 echo "Dir: $ANDROID_DIR, Package: $PACKAGE, App: $APP_NAME, URL: $URL"
@@ -46,21 +47,29 @@ cat > "$MAIN_ACTIVITY" << JAVAEOF
 package $PACKAGE;
 
 import android.annotation.SuppressLint;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.KeyEvent;
 import android.view.View;
+import android.webkit.DownloadListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
@@ -138,6 +147,15 @@ public class MainActivity extends AppCompatActivity {
         });
 
         swipeRefresh.setOnRefreshListener(() -> webView.reload());
+
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, url.substring(url.lastIndexOf("/") + 1));
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (dm != null) dm.enqueue(request);
+            Toast.makeText(this, "Download started", Toast.LENGTH_SHORT).show();
+        });
 
         loadUrl();
     }
@@ -241,6 +259,12 @@ if [ -f "$MANIFEST" ]; then
     fi
     if ! grep -q "AppTheme.Splash" "$MANIFEST"; then
         sed -i '0,/android:name="'"$PACKAGE"'\.MainActivity"/s|android:theme="@style/AppTheme.NoActionBarLaunch"|android:theme="@style/AppTheme.Splash"|' "$MANIFEST"
+    fi
+    # Set screen orientation
+    if [ "$ORIENTATION" = "portrait" ]; then
+        sed -i '0,/android:name="'"$PACKAGE"'\.MainActivity"/a\        android:screenOrientation="portrait"' "$MANIFEST"
+    elif [ "$ORIENTATION" = "landscape" ]; then
+        sed -i '0,/android:name="'"$PACKAGE"'\.MainActivity"/a\        android:screenOrientation="landscape"' "$MANIFEST"
     fi
 fi
 

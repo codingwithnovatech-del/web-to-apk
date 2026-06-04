@@ -6,12 +6,57 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("buildBtn").addEventListener("click", startBuild);
   document.getElementById("resetBtn1").addEventListener("click", resetForm);
   document.getElementById("resetBtn2").addEventListener("click", resetForm);
+  document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+  document.getElementById("refreshHistory").addEventListener("click", loadHistory);
+
+  // Load saved theme
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+    document.getElementById("themeToggle").textContent = "☀️";
+  }
 
   if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
     showApp();
+    loadHistory();
   }
 });
 
+// ===== THEME =====
+function toggleTheme() {
+  const isLight = document.body.classList.toggle("light");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
+}
+
+// ===== BUILD HISTORY =====
+async function loadHistory() {
+  const list = document.getElementById("historyList");
+  list.innerHTML = '<p class="history-empty">Loading builds...</p>';
+  try {
+    const token = getToken();
+    const headers = token ? { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" } : { Accept: "application/vnd.github.v3+json" };
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`, { headers });
+    if (!res.ok) throw new Error("Failed");
+    const releases = await res.json();
+    if (releases.length === 0) {
+      list.innerHTML = '<p class="history-empty">No builds yet.</p>';
+      return;
+    }
+    list.innerHTML = "";
+    releases.forEach(r => {
+      const apk = r.assets.find(a => a.name.endsWith(".apk"));
+      if (!apk) return;
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.innerHTML = `<div><h4>${r.name}</h4><p>${new Date(r.created_at).toLocaleDateString()}</p></div><a href="${apk.browser_download_url}" target="_blank">⬇ Download</a>`;
+      list.appendChild(item);
+    });
+  } catch (e) {
+    list.innerHTML = '<p class="history-empty">Login to see build history.</p>';
+  }
+}
+
+// ===== LOGIN =====
 function handleLogin() {
   const user = document.getElementById("loginUser").value.trim();
   const token = document.getElementById("loginToken").value.trim();
@@ -23,6 +68,7 @@ function handleLogin() {
   localStorage.setItem("github_user", user);
   localStorage.setItem("github_token", token);
   showApp();
+  loadHistory();
 }
 
 function handleLogout() {
@@ -37,14 +83,14 @@ function handleLogout() {
 function showApp() {
   document.getElementById("loginScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
-  const user = localStorage.getItem("github_user") || "User";
-  document.getElementById("greeting").textContent = "Hi, " + user;
+  document.getElementById("greeting").textContent = "Hi, " + (localStorage.getItem("github_user") || "User");
 }
 
 function getToken() {
   return localStorage.getItem("github_token");
 }
 
+// ===== BUILD =====
 async function startBuild() {
   const token = getToken();
   if (!token) { handleLogout(); showError("Session expired. Please login again."); return; }
@@ -54,6 +100,7 @@ async function startBuild() {
   const version = document.getElementById("versionInput").value.trim() || "1.0.0";
   const pkg = document.getElementById("packageInput").value.trim() || "";
   const icon = document.getElementById("iconInput").value.trim() || "";
+  const orientation = document.getElementById("orientationInput").value || "default";
 
   if (!url || !name) {
     alert("Please fill in all fields");
@@ -90,7 +137,7 @@ async function startBuild() {
       },
       body: JSON.stringify({
         ref: "main",
-        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon }
+        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon, orientation }
       })
     });
 
@@ -151,10 +198,10 @@ function setProgress(icon, text, info, percent) {
 function showDownload(url, appName) {
   document.getElementById("progress").classList.add("hidden");
   document.getElementById("downloadArea").classList.remove("hidden");
-  const ver = document.getElementById("versionInput").value.trim() || "1.0.0";
-  document.getElementById("downloadAppName").textContent = appName + " v" + ver;
+  document.getElementById("downloadAppName").textContent = appName + " v" + (document.getElementById("versionInput").value.trim() || "1.0.0");
   document.getElementById("downloadLink").href = url;
   enableBuildBtn();
+  loadHistory();
 }
 
 function showError(message) {
