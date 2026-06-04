@@ -125,7 +125,7 @@ async def start_build(req: BuildRequest, request: Request):
     try:
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/actions/workflows/build.yml/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"
@@ -409,7 +409,7 @@ async def rebuild_apk(build_id: str, user: dict = Depends(check_admin)):
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             await client.post(
-                f"https://api.github.com/repos/{REPO}/actions/workflows/build-apk.yml/dispatches",
+                f"https://api.github.com/repos/{REPO}/actions/workflows/build.yml/dispatches",
                 headers={
                     "Authorization": f"Bearer {GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json"

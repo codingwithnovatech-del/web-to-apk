@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: "Website URL to convert"
+        description: "Website URL"
         required: true
       app_name:
-        description: "Android App Name"
+        description: "App Name"
         required: true
       build_id:
-        description: "Internal build ID"
+        description: "Build ID"
         required: true
 
 env:
@@ -42,7 +42,7 @@ jobs:
           curl -s -X POST "$CALLBACK_URL/api/webhook/build-status" \
             -H "Content-Type: application/json" \
             -H "X-Webhook-Secret: $CALLBACK_SECRET" \
-            -d '{"build_id":"${{ github.event.inputs.build_id }}","status":"building"}'
+            -d "{\"build_id\":\"${{ inputs.build_id }}\",\"status\":\"building\"}"
 
       - name: Record Start Time
         run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
@@ -52,7 +52,7 @@ jobs:
           cd /tmp
           npm init -y
           npm install @capacitor/cli @capacitor/core @capacitor/android
-          APP_NAME="${{ github.event.inputs.app_name }}"
+          APP_NAME="${{ inputs.app_name }}"
           SAFE_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9' '-')
           npx cap init "$APP_NAME" "com.webapk.$SAFE_NAME" --web-dir www
           mkdir -p www
@@ -75,14 +75,14 @@ jobs:
 </html>
 HTMLEOF
           sed -i "s|__APP_NAME__|$APP_NAME|g" www/index.html
-          sed -i "s|__URL__|${{ github.event.inputs.url }}|g" www/index.html
+          sed -i "s|__URL__|${{ inputs.url }}|g" www/index.html
           cat > capacitor.config.json << 'JSONEOF'
 {
   "appId": "com.webapk.$SAFE_NAME",
   "appName": "$APP_NAME",
   "webDir": "www",
   "server": {
-    "url": "${{ github.event.inputs.url }}",
+    "url": "${{ inputs.url }}",
     "allowNavigation": ["*"],
     "cleartext": true
   },
@@ -120,7 +120,7 @@ JSONEOF
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.app_name }}.apk
+          name: ${{ inputs.app_name }}.apk
           path: /tmp/app.apk
           retention-days: 7
 
@@ -131,7 +131,7 @@ JSONEOF
           curl -s -X POST "$CALLBACK_URL/api/webhook/build-status" \
             -H "Content-Type: application/json" \
             -H "X-Webhook-Secret: $CALLBACK_SECRET" \
-            -d '{"build_id":"${{ github.event.inputs.build_id }}","status":"completed","duration":'"$DURATION"'}'
+            -d "{\"build_id\":\"${{ inputs.build_id }}\",\"status\":\"completed\",\"duration\":$DURATION}"
 
   notify_failure:
     if: failure()
@@ -140,7 +140,7 @@ JSONEOF
     steps:
       - name: Notify Build Failed
         run: |
-          curl -s -X POST "https://web-to-apk-production.up.railway.app/api/webhook/build-status" \
+          curl -s -X POST "$CALLBACK_URL/api/webhook/build-status" \
             -H "Content-Type: application/json" \
-            -H "X-Webhook-Secret: webapk-secret-2024" \
-            -d '{"build_id":"${{ github.event.inputs.build_id }}","status":"failed","error":"Build failed in workflow"}'
+            -H "X-Webhook-Secret: $CALLBACK_SECRET" \
+            -d "{\"build_id\":\"${{ inputs.build_id }}\",\"status\":\"failed\",\"error\":\"Build failed\"}"
