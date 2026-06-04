@@ -1,6 +1,18 @@
-const API_URL = "https://web-to-apk-production.railway.app";
+const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
+
+function getToken() {
+  let token = localStorage.getItem("github_token");
+  if (!token) {
+    token = prompt("Enter your GitHub Personal Access Token (repo/actions scope):");
+    if (token) localStorage.setItem("github_token", token);
+  }
+  return token;
+}
 
 async function startBuild() {
+  const token = getToken();
+  if (!token) { showError("GitHub token required"); return; }
+
   const url = document.getElementById("urlInput").value.trim();
   const name = document.getElementById("nameInput").value.trim();
 
@@ -8,7 +20,6 @@ async function startBuild() {
     alert("Please fill in all fields");
     return;
   }
-
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     alert("Please enter a valid URL starting with http:// or https://");
     return;
@@ -26,84 +37,69 @@ async function startBuild() {
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-icon">⏳</span> Starting...';
 
-  setProgress("⏳", "Starting build...", "Contacting server...", 5);
+  const buildId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  setProgress("⏳", "Starting build...", "Triggering GitHub Actions...", 5);
 
   try {
-    const res = await fetch(`${API_URL}/api/build`, {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/build.yml/dispatches`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, app_name: name })
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: { url, app_name: name, build_id: buildId }
+      })
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      showError(data.detail || "Build failed to start");
+      if (res.status === 401 || res.status === 403) {
+        localStorage.removeItem("github_token");
+        showError("Invalid or expired token. Refresh and enter a new one.");
+      } else {
+        showError("Failed to trigger build (HTTP " + res.status + ")");
+      }
       return;
     }
 
     setProgress("📦", "Build queued", "Waiting for build to start...", 15);
-    pollStatus(data.build_id, name);
+    pollStatus(buildId, name);
   } catch (e) {
-    showError("Cannot connect to server. Make sure the backend is running.");
+    showError("Cannot connect to GitHub API. Check your internet connection.");
   }
 }
 
 async function pollStatus(buildId, appName) {
-  const steps = [
-    { icon: "📦", text: "Queued", info: "Build is in queue...", progress: 10 },
-    { icon: "⚙️", text: "Setting up environment", info: "Preparing Android build tools...", progress: 20 },
-    { icon: "📥", text: "Installing dependencies", info: "Setting up Capacitor and Node.js...", progress: 35 },
-    { icon: "🏗️", text: "Creating project", info: "Generating Android project...", progress: 50 },
-    { icon: "🔨", text: "Building APK", info: "Compiling and assembling APK...", progress: 70 },
-    { icon: "📝", text: "Signing APK", info: "Signing with debug keystore...", progress: 85 },
-    { icon: "📦", text: "Finalizing", info: "Preparing download...", progress: 95 }
-  ];
-
-  let stepIndex = 0;
+  const statusUrl = `https://codingwithnovatech-del.github.io/web-to-apk/builds/${buildId}.json`;
   let pollCount = 0;
-  const maxPolls = 120; // 6 minutes max
+  const maxPolls = 120;
 
   const interval = setInterval(async () => {
     pollCount++;
 
-    if (stepIndex < steps.length) {
-      setProgress(steps[stepIndex].icon, steps[stepIndex].text, steps[stepIndex].info, steps[stepIndex].progress);
-      stepIndex++;
-    }
+    const dots = ".".repeat(pollCount % 4);
+    setProgress("⏳", `Building${dots}`, "Compiling APK... This takes 2-3 minutes", Math.min(pollCount * 2, 90));
 
     try {
-      const res = await fetch(`${API_URL}/api/status/${buildId}`);
-      const data = await res.json();
-
-      if (data.status === "completed") {
-        clearInterval(interval);
-        showDownload(buildId, appName);
-        return;
+      const res = await fetch(statusUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "completed") {
+          clearInterval(interval);
+          showDownload(data.download_url, appName);
+          return;
+        }
       }
-
-      if (data.status === "failed") {
-        clearInterval(interval);
-        showError(data.error || "Build failed. Please try again.");
-        return;
-      }
-
-      // Keep polling with animated progress
-      if (pollCount > steps.length) {
-        const extra = Math.min((pollCount - steps.length) * 2, 15);
-        setProgress("⏳", "Building...", "Still working on it. This may take a moment...", 85 + extra);
-      }
-    } catch (e) {
-      // Ignore network errors during polling
-    }
+    } catch (e) {}
 
     if (pollCount >= maxPolls) {
       clearInterval(interval);
-      showError("Build timed out. Please try again.");
+      showError("Build timed out. Check GitHub Actions for status.");
     }
   }, 3000);
-
-  interval;
 }
 
 function setProgress(icon, text, info, percent) {
@@ -113,11 +109,11 @@ function setProgress(icon, text, info, percent) {
   document.getElementById("progressFill").style.width = percent + "%";
 }
 
-function showDownload(buildId, appName) {
+function showDownload(url, appName) {
   document.getElementById("progress").classList.add("hidden");
   document.getElementById("downloadArea").classList.remove("hidden");
   document.getElementById("downloadAppName").textContent = appName;
-  document.getElementById("downloadLink").href = `${API_URL}/api/download/${buildId}`;
+  document.getElementById("downloadLink").href = url;
   document.getElementById("buildBtn").disabled = false;
   document.getElementById("buildBtn").innerHTML = '<span class="btn-icon">⚡</span> Build APK';
 }
