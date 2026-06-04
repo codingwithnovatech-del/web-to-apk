@@ -15,10 +15,10 @@ PACKAGE_PATH=$(echo "$PACKAGE" | tr '.' '/')
 cd "$ANDROID_DIR"
 
 # ============================================================
-# 1. Splash Screen - create drawable & style
+# 1. Splash Screen
 # ============================================================
 echo "[1/5] Splash Screen..."
-mkdir -p app/src/main/res/drawable app/src/main/res/values app/src/main/res/values-night
+mkdir -p app/src/main/res/drawable
 cat > app/src/main/res/drawable/splash_background.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
@@ -26,7 +26,7 @@ cat > app/src/main/res/drawable/splash_background.xml << 'EOF'
 </layer-list>
 EOF
 
-# Splash style
+mkdir -p app/src/main/res/values
 cat > app/src/main/res/values/splash.xml << 'EOF'
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
@@ -38,18 +38,18 @@ cat > app/src/main/res/values/splash.xml << 'EOF'
 EOF
 
 # ============================================================
-# 2. MainActivity.java - Full featured WebView wrapper
+# 2. MainActivity.java
 # ============================================================
 echo "[2/5] MainActivity.java..."
+
 MAIN_ACTIVITY="app/src/main/java/$PACKAGE_PATH/MainActivity.java"
 mkdir -p "$(dirname "$MAIN_ACTIVITY")"
 
-cat > "$MAIN_ACTIVITY" << ACTIVITYEOF
+cat > "$MAIN_ACTIVITY" << JAVAEOF
 package $PACKAGE;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -59,15 +59,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -94,9 +90,9 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setTheme(getResources().getIdentifier("Theme.AppCompat.Light.NoActionBar", "style", getPackageName()));
+        setTheme(R.style.Theme_AppCompat_Light_NoActionBar);
         super.onCreate(savedInstanceState);
-        setContentView(getResources().getIdentifier("activity_main", "layout", getPackageName()));
+        setContentView(R.layout.activity_main);
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
         webView = findViewById(R.id.webView);
@@ -170,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
 
         swipeRefresh.setOnRefreshListener(() -> webView.reload());
 
-        // Navigation buttons
         btnBack.setOnClickListener(v -> { if (webView.canGoBack()) webView.goBack(); });
         btnForward.setOnClickListener(v -> { if (webView.canGoForward()) webView.goForward(); });
         btnRefresh.setOnClickListener(v -> webView.reload());
@@ -181,12 +176,8 @@ public class MainActivity extends AppCompatActivity {
             startActivity(Intent.createChooser(share, "Share via"));
         });
         btnHome.setOnClickListener(v -> webView.loadUrl(homeUrl));
-
-        // Bookmarks button (tap = show dialog, long-press = add current page)
         btnBookmarks.setOnClickListener(v -> showBookmarksDialog());
         btnBookmarks.setOnLongClickListener(v -> { addBookmark(); return true; });
-
-        // Settings button
         btnSettings.setOnClickListener(v -> showSettingsDialog());
 
         loadUrl();
@@ -220,7 +211,6 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    // ========= Bookmarks =========
     private Set<String> getBookmarks() {
         return prefs.getStringSet(BOOKMARKS_KEY, new HashSet<>());
     }
@@ -233,16 +223,13 @@ public class MainActivity extends AppCompatActivity {
         Set<String> saved = getBookmarks();
         List<String> list = new ArrayList<>(saved);
         if (list.isEmpty()) {
-            Toast.makeText(this, "No bookmarks yet. Long-press the bookmark icon to add current page.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "No bookmarks yet. Long-press bookmark icon to add current page.", Toast.LENGTH_LONG).show();
             return;
         }
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, list);
         new AlertDialog.Builder(this)
                 .setTitle("Bookmarks")
-                .setAdapter(adapter, (dialog, which) -> {
-                    String url = list.get(which);
-                    webView.loadUrl(url);
-                })
+                .setAdapter(adapter, (dialog, which) -> webView.loadUrl(list.get(which)))
                 .setPositiveButton("Close", null)
                 .show();
     }
@@ -258,7 +245,6 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Bookmark added!", Toast.LENGTH_SHORT).show();
     }
 
-    // ========= Settings =========
     private void showSettingsDialog() {
         String[] items = {"Clear Cache", "Clear Bookmarks", "About"};
         new AlertDialog.Builder(this)
@@ -277,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
                         case 2:
                             new AlertDialog.Builder(this)
                                     .setTitle("About")
-                                    .setMessage("$APP_NAME\\n\\nPowered by WebView\\n" + getPackageName())
+                                    .setMessage("$APP_NAME\n\nPowered by WebView\n" + getPackageName())
                                     .setPositiveButton("OK", null)
                                     .show();
                             break;
@@ -297,10 +283,10 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 }
-ACTIVITYEOF
+JAVAEOF
 
 # ============================================================
-# 3. activity_main.xml - Layout with 7 bottom buttons
+# 3. Layout XML
 # ============================================================
 echo "[3/5] Layout XML..."
 mkdir -p app/src/main/res/layout
@@ -326,7 +312,7 @@ cat > app/src/main/res/layout/activity_main.xml << 'LAYOUTEOF'
         android:layout_height="match_parent"
         android:gravity="center"
         android:padding="32dp"
-        android:text="No internet connection\nPlease check your connection and try again"
+        android:text="No internet connection\nPlease check your connection"
         android:textAlignment="center"
         android:textColor="#666"
         android:textSize="18sp"
@@ -413,8 +399,7 @@ cat > app/src/main/res/layout/activity_main.xml << 'LAYOUTEOF'
             android:src="@drawable/ic_bookmark"
             android:scaleType="center"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Bookmarks"
-            android:longClickable="true" />
+            android:contentDescription="Bookmarks" />
 
         <ImageButton
             android:id="@+id/btnSettings"
@@ -432,7 +417,7 @@ cat > app/src/main/res/layout/activity_main.xml << 'LAYOUTEOF'
 LAYOUTEOF
 
 # ============================================================
-# 4. Vector Drawables (7 icons)
+# 4. Vector Drawables
 # ============================================================
 echo "[4/5] Navigation icons..."
 mkdir -p app/src/main/res/drawable
@@ -480,32 +465,31 @@ cat > app/src/main/res/drawable/ic_settings.xml << 'EOF'
 EOF
 
 # ============================================================
-# 5. Manifest, Gradle, Splash theme
+# 5. Gradle dependencies + Manifest
 # ============================================================
-echo "[5/5] AndroidManifest + Gradle + Theme..."
+echo "[5/5] Gradle + Manifest..."
 
-# Update AndroidManifest
+BUILD_GRADLE="app/build.gradle"
+echo "" >> "$BUILD_GRADLE"
+echo "dependencies {" >> "$BUILD_GRADLE"
+echo "    implementation 'androidx.appcompat:appcompat:1.6.1'" >> "$BUILD_GRADLE"
+echo "    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'" >> "$BUILD_GRADLE"
+echo "}" >> "$BUILD_GRADLE"
+
 MANIFEST="app/src/main/AndroidManifest.xml"
 if [ -f "$MANIFEST" ]; then
-    sed -i 's|<activity|<activity android:theme="@style/AppTheme.Splash"|' "$MANIFEST"
-    # Add permissions if not present
+    # Add ACCESS_NETWORK_STATE permission after INTERNET
     if ! grep -q "ACCESS_NETWORK_STATE" "$MANIFEST"; then
-        sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/><application|' "$MANIFEST"
+        sed -i '/android.permission.INTERNET/a\    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>' "$MANIFEST"
     fi
-    # Enable cleartext
-    sed -i 's|<application|<application android:usesCleartextTraffic="true"|' "$MANIFEST"
-fi
-
-# Add AppCompat + SwipeRefreshLayout dependency
-BUILD_GRADLE="app/build.gradle"
-if [ -f "$BUILD_GRADLE" ]; then
-    if ! grep -q "androidx.appcompat" "$BUILD_GRADLE"; then
-        sed -i 's|implementation fileTree|implementation "androidx.appcompat:appcompat:1.6.1"\n    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"\n    implementation fileTree|' "$BUILD_GRADLE"
+    # Enable cleartext traffic on application tag
+    if ! grep -q "usesCleartextTraffic" "$MANIFEST"; then
+        sed -i 's|android:allowBackup="true"|android:usesCleartextTraffic="true" android:allowBackup="true"|' "$MANIFEST"
+    fi
+    # Add splash theme to first activity
+    if ! grep -q "AppTheme.Splash" "$MANIFEST"; then
+        sed -i '0,/android:name="'$PACKAGE'.MainActivity"/s|android:theme="@style/AppTheme.NoActionBarLaunch"|android:theme="@style/AppTheme.Splash"|' "$MANIFEST"
     fi
 fi
-
-# Remove the Capacitor-generated MainActivity so ours takes effect
-CAP_ACTIVITY="app/src/main/java/$PACKAGE_PATH/MainActivity.java.cap"
-if [ -f "$CAP_ACTIVITY" ]; then rm -f "$CAP_ACTIVITY"; fi
 
 echo "=== Customization Complete! ==="
