@@ -96,6 +96,10 @@ jobs:
           cp /tmp/firebase_raw.json /tmp/android/app/google-services.json
           sed -i '1s|^|buildscript { dependencies { classpath "com.google.gms:google-services:4.4.0" } }\n|' /tmp/android/build.gradle
           sed -i '1s|^|apply plugin: "com.google.gms.google-services"\n|' /tmp/android/app/build.gradle
+      - name: Customize Android Project
+        run: |
+          chmod +x scripts/customize-android.sh
+          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
       - name: Custom Icon
         if: inputs.icon_url != ''
         run: |
@@ -129,27 +133,71 @@ jobs:
             KEY_PASS="webtoapk"
             keytool -genkey -v -keystore /tmp/release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$KEY_PASS" -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
           fi
-          cat >> app/build.gradle << GRADLEEOF
-
-android {
-    signingConfigs {
-        release {
-            storeFile file("/tmp/release.keystore")
-            storePassword "$STORE_PASS"
-            keyAlias "$KEY_ALIAS"
-            keyPassword "$KEY_PASS"
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-GRADLEEOF
-      - name: Customize Android Project
+      - name: Add Release Signing Config
         run: |
-          chmod +x scripts/customize-android.sh
-          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
+          cd /tmp/android
+          echo "" >> app/build.gradle
+          echo "android {" >> app/build.gradle
+          echo "    signingConfigs {" >> app/build.gradle
+          echo "        release {" >> app/build.gradle
+          echo '            storeFile file("/tmp/release.keystore")' >> app/build.gradle
+          echo '            storePassword "$STORE_PASS"' >> app/build.gradle
+          echo '            keyAlias "$KEY_ALIAS"' >> app/build.gradle
+          echo '            keyPassword "$KEY_PASS"' >> app/build.gradle
+          echo "        }" >> app/build.gradle
+          echo "    }" >> app/build.gradle
+          echo "    buildTypes {" >> app/build.gradle
+          echo "        release {" >> app/build.gradle
+          echo "            signingConfig signingConfigs.release" >> app/build.gradle
+          echo "            minifyEnabled false" >> app/build.gradle
+          echo "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> app/build.gradle
+          echo "        }" >> app/build.gradle
+          echo "    }" >> app/build.gradle
+          echo "}" >> app/build.gradle
+      - name: Configure Gradle
+        run: |
+          echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }" > /tmp/build_header.tmp
+          cat /tmp/android/app/build.gradle >> /tmp/build_header.tmp
+          mv /tmp/build_header.tmp /tmp/android/app/build.gradle
+      - name: Build Release APK and AAB
+        run: |
+          cd /tmp/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+          ./gradlew bundleRelease
+      - name: Rename APK and AAB
+        run: |
+          SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+          VERSION="${{ inputs.app_version }}"
+          cp /tmp/android/app/build/outputs/apk/release/app-release.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
+          cp /tmp/android/app/build/outputs/bundle/release/app-release.aab "/tmp/${SAFE_NAME}-v${VERSION}.aab" || true
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ inputs.build_id }}
+          name: ${{ inputs.app_name }} v${{ inputs.app_version }}
+          body: |
+            ${{ inputs.app_name }} v${{ inputs.app_version }}
+            URL: ${{ inputs.url }}
+            Package: ${{ env.PKG_NAME }}
+          files: |
+            /tmp/*.apk
+            /tmp/*.aab
+            /tmp/release.keystore
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Write Status JSON
+        run: |
+          mkdir -p docs/builds
+          echo "{\"status\":\"completed\",\"app_name\":\"${{ inputs.app_name }}\",\"version\":\"${{ inputs.app_version }}\",\"build_id\":\"${{ inputs.build_id }}\",\"download_url\":\"https://github.com/${{ github.repository }}/releases/tag/build-${{ inputs.build_id }}\"}" > docs/builds/${{ inputs.build_id }}.json
+      - name: Commit Status
+        run: |
+          git config user.name "APK Builder"
+          git config user.email "actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git add docs/builds/${{ inputs.build_id }}.json
+          git commit -m "build status: ${{ inputs.build_id }}" || true
+          git pull --rebase origin main || true
+          git push
