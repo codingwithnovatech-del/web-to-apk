@@ -96,6 +96,21 @@ jobs:
           cp /tmp/firebase_raw.json /tmp/android/app/google-services.json
           sed -i '1s|^|buildscript { dependencies { classpath "com.google.gms:google-services:4.4.0" } }\n|' /tmp/android/build.gradle
           sed -i '1s|^|apply plugin: "com.google.gms.google-services"\n|' /tmp/android/app/build.gradle
+      - name: Custom Icon
+        if: inputs.icon_url != ''
+        run: |
+          cd /tmp/android/app/src/main/res
+          mkdir -p mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi
+          curl -sL "${{ inputs.icon_url }}" -o /tmp/icon.png
+          convert /tmp/icon.png -resize 48x48 mipmap-mdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 72x72 mipmap-hdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 96x96 mipmap-xhdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 144x144 mipmap-xxhdpi/ic_launcher.png
+          convert /tmp/icon.png -resize 192x192 mipmap-xxxhdpi/ic_launcher.png
+          for dir in mipmap-*; do
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
