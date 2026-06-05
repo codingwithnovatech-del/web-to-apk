@@ -1,5 +1,5 @@
 const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
-const WORKFLOW_ID = 289175006;
+const WORKFLOW_FILE = "apk-builder.yml";
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginBtn").addEventListener("click", handleLogin);
@@ -243,7 +243,7 @@ async function startBuild() {
   setProgress("&#9203;", "Starting build...", "Triggering GitHub Actions...", 5);
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches`, {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,

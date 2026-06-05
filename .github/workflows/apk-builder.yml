@@ -12,43 +12,43 @@ on:
         description: Build ID
         required: true
       package_name:
-        description: Package Name (optional)
+        description: Package Name
         required: false
         default: ""
       app_version:
-        description: App Version (optional)
+        description: App Version
         required: false
         default: "1.0.0"
       icon_url:
-        description: App Icon URL (optional)
+        description: App Icon URL
         required: false
         default: ""
       keystore_b64:
-        description: Keystore Base64 (optional)
+        description: Keystore Base64
         required: false
         default: ""
       keystore_pass:
-        description: Keystore Password (optional)
+        description: Keystore Password
         required: false
         default: ""
       key_alias:
-        description: Key Alias (optional)
+        description: Key Alias
         required: false
         default: ""
       key_pass:
-        description: Key Password (optional)
+        description: Key Password
         required: false
         default: ""
       orientation:
-        description: Screen Orientation (default/portrait/landscape)
+        description: Screen Orientation
         required: false
         default: "default"
       firebase_config_b64:
-        description: Firebase google-services.json (base64, optional)
+        description: Firebase Config
         required: false
         default: ""
       fcm_api_key:
-        description: Firebase Server Key (optional)
+        description: FCM Server Key
         required: false
         default: ""
 
