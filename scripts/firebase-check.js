@@ -32,7 +32,7 @@ async function main() {
   if (data.banned) {
     console.log("build_allowed=false");
     console.log("reason=banned");
-    process.exit(1);
+    return;
   }
 
   if (data.tier === "paid") {
@@ -56,7 +56,7 @@ async function main() {
     console.log("build_allowed=false");
     console.log("reason=limit_reached");
     console.log(`limit=${limit}`);
-    process.exit(1);
+    return;
   }
 
   await safeUpdate(userRef, { builds_today: admin.firestore.FieldValue.increment(1) });
@@ -70,7 +70,6 @@ async function safeUpdate(ref, data) {
 }
 
 main().catch(e => {
-  console.log(`build_allowed=false`);
+  console.log("build_allowed=false");
   console.log(`reason=error: ${e.message}`);
-  process.exit(1);
 });
