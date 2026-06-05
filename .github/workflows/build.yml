@@ -3,52 +3,52 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: "Website URL"
+        description: Website URL
         required: true
       app_name:
-        description: "App Name"
+        description: App Name
         required: true
       build_id:
-        description: "Build ID"
+        description: Build ID
         required: true
       package_name:
-        description: "Package Name (optional, e.g. com.mycompany.myapp)"
+        description: Package Name (optional)
         required: false
         default: ""
       app_version:
-        description: "App Version (optional, e.g. 1.0.0)"
+        description: App Version (optional)
         required: false
         default: "1.0.0"
       icon_url:
-        description: "App Icon URL (optional, square PNG 512x512)"
+        description: App Icon URL (optional)
         required: false
         default: ""
       keystore_b64:
-        description: "Keystore Base64 (optional, for signing)"
+        description: Keystore Base64 (optional)
         required: false
         default: ""
       keystore_pass:
-        description: "Keystore Password (optional)"
+        description: Keystore Password (optional)
         required: false
         default: ""
       key_alias:
-        description: "Key Alias (optional)"
+        description: Key Alias (optional)
         required: false
         default: ""
       key_pass:
-        description: "Key Password (optional)"
+        description: Key Password (optional)
         required: false
         default: ""
       orientation:
-        description: "Screen Orientation (default/portrait/landscape)"
+        description: Screen Orientation (default/portrait/landscape)
         required: false
         default: "default"
       firebase_config_b64:
-        description: "Firebase google-services.json (base64 encoded, optional)"
+        description: Firebase google-services.json (base64, optional)
         required: false
         default: ""
       fcm_api_key:
-        description: "Firebase Server Key (for admin notifications, optional)"
+        description: Firebase Server Key (optional)
         required: false
         default: ""
 
@@ -60,7 +60,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -72,7 +71,6 @@ jobs:
           java-version: 21
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
       - name: Create Project
         run: |
           cd /tmp
@@ -88,55 +86,42 @@ jobs:
           echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${{ inputs.app_name }}</title><style>*{margin:0;padding:0}body{background:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#555}</style></head><body><div><h2>Loading ${{ inputs.app_name }}...</h2></div></body></html>' > www/index.html
           printf '{"appId":"%s","appName":"%s","versionName":"%s","versionCode":1,"webDir":"www","server":{"url":"%s","allowNavigation":["*"],"cleartext":true},"android":{"allowMixedContent":true,"webContentsDebuggingEnabled":false}}' "$PKG_NAME" "${{ inputs.app_name }}" "${{ inputs.app_version }}" "${{ inputs.url }}" > capacitor.config.json
           npx cap add android
-          # Save package name for later steps
           echo "PKG_NAME=$PKG_NAME" >> $GITHUB_ENV
           echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
-
       - name: Setup Firebase Config
         if: ${{ inputs.firebase_config_b64 != '' }}
         run: |
           echo "${{ inputs.firebase_config_b64 }}" | base64 -d > /tmp/firebase_raw.json
-          # Update package name to match actual app package
           sed -i 's|"package_name": "[^"]*"|"package_name": "${{ env.PKG_NAME }}"|' /tmp/firebase_raw.json
           cp /tmp/firebase_raw.json /tmp/android/app/google-services.json
-          # Add google-services plugin to project-level build.gradle
           sed -i '1s|^|buildscript { dependencies { classpath "com.google.gms:google-services:4.4.0" } }\n|' /tmp/android/build.gradle
           sed -i '1s|^|apply plugin: "com.google.gms.google-services"\n|' /tmp/android/app/build.gradle
-
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
           ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
-
       - name: Custom Icon
         if: ${{ inputs.icon_url != '' }}
         run: |
           cd /tmp/android/app/src/main/res
           mkdir -p mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi
           curl -sL "${{ inputs.icon_url }}" -o /tmp/icon.png
-          # Convert to various densities using ImageMagick
           convert /tmp/icon.png -resize 48x48 mipmap-mdpi/ic_launcher.png
           convert /tmp/icon.png -resize 72x72 mipmap-hdpi/ic_launcher.png
           convert /tmp/icon.png -resize 96x96 mipmap-xhdpi/ic_launcher.png
           convert /tmp/icon.png -resize 144x144 mipmap-xxhdpi/ic_launcher.png
           convert /tmp/icon.png -resize 192x192 mipmap-xxxhdpi/ic_launcher.png
-          # Also generate foreground (same as launcher for simplicity)
           for dir in mipmap-*; do
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
           done
-
       - name: Set Version + Keystore + Release Config
         run: |
           cd /tmp/android
-
-          # Set version
           VERSION="${{ inputs.app_version }}"
           VCODE=$(echo "$VERSION" | awk -F. '{print ($1*10000)+($2*100)+$3}')
           sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" app/build.gradle
           sed -i "s|versionCode .*|versionCode $VCODE|" app/build.gradle
-
-          # Generate or use provided keystore
           if [ -n "${{ inputs.keystore_b64 }}" ]; then
             echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/release.keystore
             STORE_PASS="${{ inputs.keystore_pass }}"
@@ -151,8 +136,6 @@ jobs:
               -storepass "$STORE_PASS" -keypass "$KEY_PASS" \
               -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
           fi
-
-          # Inject release signing config into build.gradle
           cat >> app/build.gradle << GRADLEEOF
 
 android {
@@ -173,43 +156,33 @@ android {
     }
 }
 GRADLEEOF
-
       - name: Configure Gradle
         run: |
           echo "configurations.all { resolutionStrategy { force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.22' } }" > /tmp/build_header.tmp
           cat /tmp/android/app/build.gradle >> /tmp/build_header.tmp
           mv /tmp/build_header.tmp /tmp/android/app/build.gradle
-
       - name: Build Release APK + AAB
         run: |
           cd /tmp/android
           chmod +x gradlew
           ./gradlew assembleRelease
           ./gradlew bundleRelease
-
       - name: Rename APK + AAB
         run: |
           SAFE_NAME=$(echo -n "${{ inputs.app_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
           VERSION="${{ inputs.app_version }}"
           cp /tmp/android/app/build/outputs/apk/release/app-release.apk "/tmp/${SAFE_NAME}-v${VERSION}.apk"
           cp /tmp/android/app/build/outputs/bundle/release/app-release.aab "/tmp/${SAFE_NAME}-v${VERSION}.aab" || true
-
       - name: Create Release and Upload
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ inputs.build_id }}
           name: ${{ inputs.app_name }} v${{ inputs.app_version }}
           body: |
-            📱 **${{ inputs.app_name }}** v${{ inputs.app_version }}
-            🌐 ${{ inputs.url }}
-            📦 ${{ env.PKG_NAME }}
-
-            **📥 Downloads:**
-            - APK (direct install) — `*.apk`
-            - AAB (Google Play) — `*.aab`
-            - Keystore (for updates) — `*.keystore`
-
-            🔑 **Keystore:** password `webtoapk`, alias `webtoapk`
+            **${{ inputs.app_name }}** v${{ inputs.app_version }}
+            URL: ${{ inputs.url }}
+            Package: ${{ env.PKG_NAME }}
+            APK + AAB + Keystore attached
           files: |
             /tmp/*.apk
             /tmp/*.aab
@@ -218,12 +191,10 @@ GRADLEEOF
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Write Status JSON
         run: |
           mkdir -p docs/builds
           echo "{\"status\":\"completed\",\"app_name\":\"${{ inputs.app_name }}\",\"version\":\"${{ inputs.app_version }}\",\"build_id\":\"${{ inputs.build_id }}\",\"download_url\":\"https://github.com/${{ github.repository }}/releases/tag/build-${{ inputs.build_id }}\"}" > docs/builds/${{ inputs.build_id }}.json
-
       - name: Commit Status
         run: |
           git config user.name "APK Builder"
