@@ -128,7 +128,7 @@ async function startBuild() {
   setProgress("⏳", "Starting build...", "Triggering GitHub Actions...", 5);
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/build.yml/dispatches`, {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/289175006/dispatches`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
