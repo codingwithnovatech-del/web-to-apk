@@ -40,14 +40,9 @@ on:
         required: false
         default: ""
       orientation:
-        description: "Screen Orientation"
+        description: "Screen Orientation (default/portrait/landscape)"
         required: false
         default: "default"
-        type: choice
-        options:
-          - default
-          - portrait
-          - landscape
       firebase_config_b64:
         description: "Firebase google-services.json (base64 encoded, optional)"
         required: false
@@ -100,13 +95,12 @@ jobs:
       - name: Setup Firebase Config
         if: ${{ inputs.firebase_config_b64 != '' }}
         run: |
-          echo "${{ inputs.firebase_config_b64 }}" | base64 -d > /tmp/android/app/google-services.json
+          echo "${{ inputs.firebase_config_b64 }}" | base64 -d > /tmp/firebase_raw.json
+          # Update package name to match actual app package
+          sed -i 's|"package_name": "[^"]*"|"package_name": "${{ env.PKG_NAME }}"|' /tmp/firebase_raw.json
+          cp /tmp/firebase_raw.json /tmp/android/app/google-services.json
           # Add google-services plugin to project-level build.gradle
-          echo "buildscript {
-    dependencies {
-        classpath 'com.google.gms:google-services:4.4.0'
-    }
-}" >> /tmp/android/build.gradle
+          sed -i '1s|^|buildscript { dependencies { classpath "com.google.gms:google-services:4.4.0" } }\n|' /tmp/android/build.gradle
           sed -i '1s|^|apply plugin: "com.google.gms.google-services"\n|' /tmp/android/app/build.gradle
 
       - name: Customize Android Project
