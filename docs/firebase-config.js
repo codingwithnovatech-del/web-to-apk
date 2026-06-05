@@ -1,11 +1,10 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyDMKRFChW1MeUkGTH_rMyKImFTT-IQZptw",
-  authDomain: "webtoapk-ab3e4.firebaseapp.com",
-  databaseURL: "https://webtoapk-ab3e4-default-rtdb.firebaseio.com",
-  projectId: "webtoapk-ab3e4",
-  storageBucket: "webtoapk-ab3e4.firebasestorage.app",
-  messagingSenderId: "1036876948372",
-  appId: "1:1036876948372:web:9c625172794c9879742581"
+  apiKey: "AIzaSyCQ0P-301yjDPTSokOe4x0o01G_JCLZ4W4",
+  authDomain: "webtoapk-f2868.firebaseapp.com",
+  projectId: "webtoapk-f2868",
+  storageBucket: "webtoapk-f2868.firebasestorage.app",
+  messagingSenderId: "63147419146",
+  appId: "1:63147419146:web:219affcfd7ed35ec4ae1f3"
 };
 
 firebase.initializeApp(firebaseConfig);
