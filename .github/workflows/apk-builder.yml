@@ -111,6 +111,44 @@ jobs:
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
           done
+      - name: Set Version and Keystore
+        run: |
+          cd /tmp/android
+          VERSION="${{ inputs.app_version }}"
+          VCODE=$(echo "$VERSION" | awk -F. '{print ($1*10000)+($2*100)+$3}')
+          sed -i "s|versionName \".*\"|versionName \"$VERSION\"|" app/build.gradle
+          sed -i "s|versionCode .*|versionCode $VCODE|" app/build.gradle
+          if [ -n "${{ inputs.keystore_b64 }}" ]; then
+            echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/release.keystore
+            STORE_PASS="${{ inputs.keystore_pass }}"
+            KEY_ALIAS="${{ inputs.key_alias }}"
+            KEY_PASS="${{ inputs.key_pass }}"
+          else
+            STORE_PASS="webtoapk"
+            KEY_ALIAS="webtoapk"
+            KEY_PASS="webtoapk"
+            keytool -genkey -v -keystore /tmp/release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$KEY_PASS" -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
+          fi
+          cat >> app/build.gradle << GRADLEEOF
+
+android {
+    signingConfigs {
+        release {
+            storeFile file("/tmp/release.keystore")
+            storePassword "$STORE_PASS"
+            keyAlias "$KEY_ALIAS"
+            keyPassword "$KEY_PASS"
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+GRADLEEOF
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
