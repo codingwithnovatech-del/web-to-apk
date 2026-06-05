@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Store - WebToAPK Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="sidebar-header">WebToAPK</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="builds.html">Builds</a>
+    <a href="users.html">Users</a>
+    <a href="settings.html">Settings</a>
+    <a href="payments.html">Payments</a>
+    <a href="store.html" class="active">App Store</a>
+    <a href="javascript:adminLogout()" class="logout-link">Logout</a>
+  </nav>
+  <main class="main-content">
+    <div class="page-header"><h1>App Store</h1><button class="btn-sm" onclick="showAddApp()">+ Add App</button></div>
+    <div class="card">
+      <div style="overflow-x:auto">
+        <table><thead><tr><th>App Name</th><th>Package</th><th>Category</th><th>Featured</th><th>Actions</th></tr></thead>
+        <tbody id="storeTableBody"></tbody></table>
+      </div>
+    </div>
+  </main>
+  <div id="addAppModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Add App</h2>
+      <div class="form-group"><label>App Name</label><input id="newAppName" placeholder="My App"></div>
+      <div class="form-group"><label>Package Name</label><input id="newAppPackage" placeholder="com.example.app"></div>
+      <div class="form-group"><label>Category</label><select id="newAppCategory"><option>Business</option><option>Education</option><option>Entertainment</option><option>News</option><option>Social</option><option>Tools</option><option>Shopping</option><option>Other</option></select></div>
+      <div class="form-group"><label>Icon URL</label><input id="newAppIcon" placeholder="https://example.com/icon.png"></div>
+      <div class="form-group"><label>Description</label><textarea id="newAppDesc" rows="3"></textarea></div>
+      <div class="form-group"><label>Download URL</label><input id="newAppUrl" placeholder="https://github.com/.../releases/..."></div>
+      <button class="btn-primary" onclick="createApp()">Add</button>
+      <button class="btn-sm" onclick="closeModal('addAppModal')">Cancel</button>
+    </div>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

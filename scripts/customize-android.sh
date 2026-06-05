@@ -1,6 +1,6 @@
 #!/bin/bash
 # customize-android.sh - Clean WebView with pull-refresh, progress bar, offline support, splash
-# Usage: ./customize-android.sh <android_project_dir> <package_name> <app_name> <url> [orientation]
+# Usage: ./customize-android.sh <android_project_dir> <package_name> <app_name> <url> [orientation] [branding]
 
 set -e
 ANDROID_DIR="$1"
@@ -8,6 +8,7 @@ PACKAGE="$2"
 APP_NAME="$3"
 URL="$4"
 ORIENTATION="${5:-default}"
+BRANDING="${6:-true}"
 
 echo "=== Customizing Android Project ==="
 echo "Dir: $ANDROID_DIR, Package: $PACKAGE, App: $APP_NAME, URL: $URL"
@@ -246,8 +247,20 @@ cat > app/src/main/res/layout/activity_main.xml << 'LAYOUTEOF'
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-</RelativeLayout>
 LAYOUTEOF
+  if [ "$BRANDING" = "true" ]; then
+    echo '    <TextView' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:id="@+id/branding"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:layout_width="match_parent"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:layout_height="wrap_content"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:layout_alignParentBottom="true"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:gravity="center"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:padding="2dp"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:text="Powered by WebToAPK"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:textColor="#888"' >> app/src/main/res/layout/activity_main.xml
+    echo '        android:textSize="10sp" />' >> app/src/main/res/layout/activity_main.xml
+  fi
+  echo '</RelativeLayout>' >> app/src/main/res/layout/activity_main.xml
 
 # ============================================================
 # 4. Manifest + Gradle deps

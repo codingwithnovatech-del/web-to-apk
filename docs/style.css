@@ -624,6 +624,14 @@ section { position:relative; z-index:1; padding:100px 24px; }
   font-size:0.8rem; color:var(--muted);
 }
 
+/* ===== PAYWALL MODAL ===== */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:1000; }
+.modal-box { background:var(--card); border:1px solid var(--card-border); border-radius:16px; padding:32px; max-width:400px; width:90%; text-align:center; }
+.modal-box h2 { margin-bottom:8px; }
+.modal-btn { padding:10px 24px; background:var(--primary); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+.modal-btn:hover { opacity:0.9; }
+.hidden { display:none !important; }
+
 /* ===== PROGRESS / RESULT ===== */
 .progress-card {
   max-width:520px; margin:16px auto 0;

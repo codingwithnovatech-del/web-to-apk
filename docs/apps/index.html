@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Store - WebToAPK</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Inter, system-ui, sans-serif; background: #f5f5f7; color: #1d1d1f; min-height: 100vh; }
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    .subtitle { color: #6e6e73; margin-bottom: 32px; }
+    .filters { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+    .filters select, .filters input { padding: 8px 14px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: #fff; }
+    .app-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .app-card {
+      background: #fff; border-radius: 14px; padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: transform 0.2s; border: 1px solid #e8e8ed;
+    }
+    .app-card:hover { transform: translateY(-2px); }
+    .app-card.featured { border-color: #ffd60a; box-shadow: 0 2px 16px rgba(255,214,10,0.2); }
+    .app-icon { width: 48px; height: 48px; border-radius: 10px; background: #f0f0f5; margin-bottom: 12px; object-fit: cover; }
+    .app-card h3 { font-size: 16px; margin-bottom: 4px; }
+    .app-card .package { font-size: 11px; color: #6e6e73; font-family: monospace; margin-bottom: 8px; }
+    .app-card .desc { font-size: 13px; color: #6e6e73; margin-bottom: 12px; line-height: 1.4; }
+    .app-card .category { display: inline-block; padding: 2px 8px; background: #f0f0f5; border-radius: 6px; font-size: 11px; color: #6e6e73; margin-bottom: 12px; }
+    .app-card .btn { display: inline-block; padding: 8px 16px; background: #007aff; color: #fff; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500; }
+    .app-card .btn:hover { background: #0062cc; }
+    .featured-badge { display: inline-block; font-size: 11px; background: #ffd60a; color: #1d1d1f; padding: 2px 8px; border-radius: 6px; font-weight: 600; margin-bottom: 8px; }
+    .empty { text-align: center; padding: 60px 20px; color: #6e6e73; }
+    @media (max-width: 600px) { .app-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>App Store</h1>
+    <p class="subtitle">Browse Android apps built with WebToAPK</p>
+    <div class="filters">
+      <select id="categoryFilter" onchange="loadApps()">
+        <option value="">All Categories</option>
+        <option>Business</option><option>Education</option><option>Entertainment</option>
+        <option>News</option><option>Social</option><option>Tools</option><option>Shopping</option><option>Other</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="Search apps..." oninput="loadApps()">
+    </div>
+    <div id="appGrid" class="app-grid">
+      <div class="empty">Loading apps...</div>
+    </div>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script>
+    async function loadApps() {
+      const grid = document.getElementById("appGrid");
+      const category = document.getElementById("categoryFilter").value;
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      try {
+        let q = db.collection("store").orderBy("created_at", "desc");
+        const snap = await q.get();
+        let apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (category) apps = apps.filter(a => a.category === category);
+        if (search) apps = apps.filter(a => (a.name || "").toLowerCase().includes(search) || (a.package || "").includes(search));
+        const featured = apps.filter(a => a.featured);
+        const rest = apps.filter(a => !a.featured);
+        const sorted = [...featured, ...rest];
+        if (!sorted.length) {
+          grid.innerHTML = '<div class="empty">No apps yet</div>';
+          return;
+        }
+        grid.innerHTML = sorted.map(a => `
+          <div class="app-card ${a.featured ? 'featured' : ''}">
+            ${a.featured ? '<div class="featured-badge">&#11088; Featured</div>' : ''}
+            ${a.icon ? `<img src="${a.icon}" class="app-icon" onerror="this.style.display='none'">` : '<div class="app-icon"></div>'}
+            <h3>${a.name || "Untitled"}</h3>
+            <div class="package">${a.package || ""}</div>
+            ${a.category ? `<div class="category">${a.category}</div>` : ''}
+            ${a.description ? `<div class="desc">${a.description}</div>` : ''}
+            ${a.download_url ? `<a href="${a.download_url}" target="_blank" class="btn">Download APK</a>` : ''}
+          </div>
+        `).join("");
+      } catch (e) {
+        grid.innerHTML = '<div class="empty">Error loading apps</div>';
+      }
+    }
+    loadApps();
+  </script>
+</body>
+</html>

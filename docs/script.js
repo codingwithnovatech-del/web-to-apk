@@ -1,6 +1,14 @@
 const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
 const WORKFLOW_FILE = "apk-builder.yml";
 
+let fbUser = null;
+try {
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().onAuthStateChanged(u => { fbUser = u; });
+    firebase.auth().signInAnonymously().catch(() => {});
+  }
+} catch (e) {}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginBtn").addEventListener("click", handleLogin);
   document.getElementById("logoutBtn").addEventListener("click", handleLogout);
@@ -10,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("themeToggle").addEventListener("click", toggleTheme);
   document.getElementById("refreshHistory").addEventListener("click", loadHistory);
   document.getElementById("nameInput").addEventListener("input", updateMockup);
+  document.getElementById("payNowBtn")?.addEventListener("click", payNow);
 
   document.querySelectorAll(".toggle-item").forEach(el => {
     el.addEventListener("click", () => el.classList.toggle("active"));
@@ -162,6 +171,45 @@ function updateRecentBuilds(releases) {
     `;
     container.appendChild(row);
   });
+
+function showPaywall(settings) {
+  const modal = document.getElementById("paywallModal");
+  const msg = document.getElementById("paywallMessage");
+  const price = document.getElementById("paywallPrice");
+  const qr = document.getElementById("paywallQr");
+  const upi = document.getElementById("paywallUpi");
+  const btn = document.getElementById("payNowBtn");
+  if (!modal) return;
+  const s = settings || {};
+  const p = s.free_price || 99;
+  msg.textContent = `You've used all free builds. Pay &#8377;${p} to unlock unlimited builds for a day.`;
+  price.innerHTML = `&#8377;${p}`;
+  if (s.upi_qr_url) qr.innerHTML = `<img src="${s.upi_qr_url}" style="width:160px;height:160px;border-radius:8px;object-fit:contain">`;
+  else qr.innerHTML = "";
+  upi.textContent = s.upi_id ? `UPI: ${s.upi_id}` : "";
+  btn.textContent = `Pay &#8377;${p}`;
+  modal.classList.remove("hidden");
+}
+
+function closePaywall() {
+  const modal = document.getElementById("paywallModal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function payNow() {
+  const settings = {};
+  const upiEl = document.getElementById("paywallUpi");
+  if (upiEl && upiEl.textContent) {
+    const upiId = upiEl.textContent.replace("UPI: ", "");
+    if (upiId) {
+      const amt = document.getElementById("paywallPrice")?.textContent?.replace("₹", "") || "99";
+      const url = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=WebToAPK&am=${amt}&cu=INR&tn=Build%20Upgrade`;
+      window.open(url, "_blank");
+      alert(`Pay &#8377;${amt} to ${upiId}. After payment, contact admin for approval.`);
+    }
+  }
+  closePaywall();
+}
 }
 
 // ===== MOCKUP =====
@@ -238,11 +286,41 @@ async function startBuild() {
   btn.innerHTML = '<span>&#9203;</span> Starting...';
 
   const buildId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const deviceId = fbUser?.uid || localStorage.getItem("device_id") || "unknown";
+  if (!localStorage.getItem("device_id")) localStorage.setItem("device_id", deviceId);
 
   animateProcessStep(1);
-  setProgress("&#9203;", "Starting build...", "Triggering GitHub Actions...", 5);
+  setProgress("&#9203;", "Checking limits...", "Verifying daily build allowance...", 5);
 
   try {
+    if (fbUser && typeof firebase !== "undefined") {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const userRef = firebase.firestore().collection("users").doc(fbUser.uid);
+        const userSnap = await userRef.get();
+
+        if (userSnap.exists) {
+          const data = userSnap.data();
+          if (data.banned) {
+            btn.disabled = false; btn.innerHTML = "&#9989; Build APK";
+            showError("Account is banned.");
+            return;
+          }
+          if (data.tier !== "paid" && data.last_build_date === today) {
+            const settingsSnap = await firebase.firestore().collection("settings").doc("default").get();
+            const limit = (settingsSnap.data()?.daily_limit) || 3;
+            if (data.builds_today >= limit) {
+              btn.disabled = false; btn.innerHTML = "&#9989; Build APK";
+              showPaywall(settingsSnap.data());
+              return;
+            }
+          }
+        }
+      } catch (fe) { console.warn("Firebase check failed, proceeding anyway:", fe); }
+    }
+
+    setProgress("&#9203;", "Triggering build...", "Contacting GitHub Actions...", 15);
+
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`, {
       method: "POST",
       headers: {
@@ -252,7 +330,7 @@ async function startBuild() {
       },
       body: JSON.stringify({
         ref: "main",
-        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon, orientation }
+        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon, orientation, device_id: deviceId }
       })
     });
 

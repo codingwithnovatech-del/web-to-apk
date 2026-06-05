@@ -51,6 +51,10 @@ on:
         description: FCM Server Key
         required: false
         default: ""
+      device_id:
+        description: Device ID
+        required: true
+        default: ""
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -74,6 +78,22 @@ jobs:
           java-version: 21
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+      - name: Check Build Limit
+        id: check
+        run: |
+          cd scripts
+          npm install
+          node firebase-check.js >> $GITHUB_OUTPUT
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          INPUT_DEVICE_ID: ${{ inputs.device_id }}
+          INPUT_BUILD_ID: ${{ inputs.build_id }}
+      - name: Stop if limit reached
+        if: steps.check.outputs.build_allowed == 'false'
+        run: |
+          echo "Build not allowed: ${{ steps.check.outputs.reason }}"
+          exit 1
       - name: Create Project
         run: |
           cd /tmp
@@ -102,7 +122,7 @@ jobs:
       - name: Customize Android Project
         run: |
           chmod +x scripts/customize-android.sh
-          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
+          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}" "${{ steps.check.outputs.branding }}"
       - name: Custom Icon
         if: inputs.icon_url != ''
         run: |
