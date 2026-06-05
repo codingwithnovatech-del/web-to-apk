@@ -146,7 +146,8 @@ async function startBuild() {
         handleLogout();
         showError("Invalid or expired token. Please login again.");
       } else {
-        showError("Failed to trigger build (HTTP " + res.status + ")");
+        const errBody = await res.text().catch(() => "");
+        showError("Failed to trigger build (HTTP " + res.status + "): " + errBody.slice(0, 300));
       }
       return;
     }
