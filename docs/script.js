@@ -2,14 +2,7 @@ const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
 const WORKFLOW_FILE = "apk-builder.yml";
 
 let fbUser = null;
-let cachedToken = localStorage.getItem("github_token") || "";
-
-try {
-  if (typeof firebase !== "undefined" && firebase.auth) {
-    firebase.auth().onAuthStateChanged(u => { fbUser = u; });
-    firebase.auth().signInAnonymously().catch(() => {});
-  }
-} catch (e) {}
+let cachedToken = "";
 
 async function loadTokenFromFirestore() {
   if (typeof firebase === "undefined" || !firebase.firestore) return;
@@ -17,9 +10,121 @@ async function loadTokenFromFirestore() {
     const snap = await firebase.firestore().collection("settings").doc("default").get();
     if (snap.exists && snap.data().github_token) {
       cachedToken = snap.data().github_token;
-      localStorage.setItem("github_token", cachedToken);
     }
   } catch {}
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById("authError");
+  if (el) { el.textContent = msg; el.classList.remove("hidden"); }
+}
+
+function clearAuthError() {
+  const el = document.getElementById("authError");
+  if (el) el.classList.add("hidden");
+}
+
+function switchAuthTab(tab) {
+  clearAuthError();
+  document.getElementById("tabSignIn").classList.toggle("active", tab === "signin");
+  document.getElementById("tabSignUp").classList.toggle("active", tab === "signup");
+  document.getElementById("signInForm").classList.toggle("hidden", tab !== "signin");
+  document.getElementById("signUpForm").classList.toggle("hidden", tab !== "signup");
+  document.getElementById("authTitle").textContent = tab === "signin" ? "Sign In" : "Create Account";
+  document.getElementById("authSubtitle").textContent = tab === "signin" ? "Welcome back! Sign in to continue." : "Create an account to start building APKs.";
+  document.getElementById("toggleAuthText").innerHTML = tab === "signin"
+    ? "Don't have an account? <a href=\"#\" onclick=\"switchAuthTab('signup');return false\">Sign Up</a>"
+    : "Already have an account? <a href=\"#\" onclick=\"switchAuthTab('signin');return false\">Sign In</a>";
+}
+
+async function signInWithEmail() {
+  clearAuthError();
+  const email = document.getElementById("signInEmail").value.trim();
+  const password = document.getElementById("signInPassword").value;
+  if (!email || !password) { showAuthError("Please fill in all fields"); return; }
+  try {
+    document.getElementById("signInBtn").disabled = true;
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    showAuthError(e.message);
+    document.getElementById("signInBtn").disabled = false;
+  }
+}
+
+async function signUpWithEmail() {
+  clearAuthError();
+  const name = document.getElementById("signUpName").value.trim();
+  const email = document.getElementById("signUpEmail").value.trim();
+  const password = document.getElementById("signUpPassword").value;
+  if (!name || !email || !password) { showAuthError("Please fill in all fields"); return; }
+  if (password.length < 6) { showAuthError("Password must be at least 6 characters"); return; }
+  try {
+    document.getElementById("signUpBtn").disabled = true;
+    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: name });
+  } catch (e) {
+    showAuthError(e.message);
+    document.getElementById("signUpBtn").disabled = false;
+  }
+}
+
+async function signInWithGoogle() {
+  clearAuthError();
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await firebase.auth().signInWithPopup(provider);
+  } catch (e) {
+    showAuthError(e.message);
+  }
+}
+
+async function signInWithGitHub() {
+  clearAuthError();
+  try {
+    const provider = new firebase.auth.GithubAuthProvider();
+    await firebase.auth().signInWithPopup(provider);
+  } catch (e) {
+    showAuthError(e.message);
+  }
+}
+
+function handleLogout() {
+  firebase.auth().signOut().catch(() => {});
+  localStorage.removeItem("device_id");
+}
+
+function showApp(user) {
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("appScreen").classList.remove("hidden");
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
+  document.getElementById("greeting").textContent = "Hi, " + displayName;
+}
+
+function showLoginScreen() {
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("appScreen").classList.add("hidden");
+  document.getElementById("downloadArea").classList.add("hidden");
+  document.getElementById("errorArea").classList.add("hidden");
+  document.getElementById("progress").classList.add("hidden");
+}
+
+function getToken() {
+  return cachedToken;
+}
+
+function initAuth() {
+  if (typeof firebase === "undefined" || !firebase.auth) return;
+  firebase.auth().onAuthStateChanged(async (user) => {
+    fbUser = user;
+    if (user) {
+      await loadTokenFromFirestore();
+      showApp(user);
+      loadHistory();
+    } else {
+      cachedToken = "";
+      showLoginScreen();
+    }
+  });
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -30,10 +135,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("refreshHistory").addEventListener("click", loadHistory);
   document.getElementById("nameInput").addEventListener("input", updateMockup);
   document.getElementById("payNowBtn")?.addEventListener("click", payNow);
+  document.getElementById("logoutBtn")?.addEventListener("click", handleLogout);
 
   document.querySelectorAll(".toggle-item").forEach(el => {
     el.addEventListener("click", () => el.classList.toggle("active"));
   });
+
+  document.getElementById("signInEmail").addEventListener("keydown", e => { if (e.key === "Enter") signInWithEmail(); });
+  document.getElementById("signInPassword").addEventListener("keydown", e => { if (e.key === "Enter") signInWithEmail(); });
+  document.getElementById("signUpPassword").addEventListener("keydown", e => { if (e.key === "Enter") signUpWithEmail(); });
+
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+    document.getElementById("themeToggle").innerHTML = "&#9728;&#65039;";
+  }
+
+  initAuth();
+  initParticles();
+  initScrollEffect();
+});
 
   if (localStorage.getItem("theme") === "light") {
     document.body.classList.add("light");
@@ -188,6 +308,7 @@ function updateRecentBuilds(releases) {
     `;
     container.appendChild(row);
   });
+}
 
 function showPaywall(settings) {
   const modal = document.getElementById("paywallModal");
@@ -227,46 +348,11 @@ function payNow() {
   }
   closePaywall();
 }
-}
 
 // ===== MOCKUP =====
 function updateMockup() {
   const name = document.getElementById("nameInput").value.trim() || "My App";
   document.getElementById("mockupAppName").textContent = name;
-}
-
-// ===== LOGIN =====
-function handleLogin() {
-  const user = document.getElementById("loginUser").value.trim();
-  const token = document.getElementById("loginToken").value.trim();
-  if (!user || !token) { alert("Please fill in all fields"); return; }
-  if (!token.startsWith("ghp_") && !token.startsWith("github_pat_")) {
-    alert("Invalid token format. It should start with 'ghp_' or 'github_pat_'");
-    return;
-  }
-  localStorage.setItem("github_user", user);
-  localStorage.setItem("github_token", token);
-  showApp();
-  loadHistory();
-}
-
-function handleLogout() {
-  localStorage.removeItem("github_user");
-  localStorage.removeItem("github_token");
-  document.getElementById("loginScreen").classList.remove("hidden");
-  document.getElementById("appScreen").classList.add("hidden");
-  document.getElementById("loginToken").value = "";
-  document.getElementById("loginUser").value = "";
-}
-
-function showApp() {
-  document.getElementById("loginScreen").classList.add("hidden");
-  document.getElementById("appScreen").classList.remove("hidden");
-  document.getElementById("greeting").textContent = "Hi, " + (localStorage.getItem("github_user") || "User");
-}
-
-function getToken() {
-  return cachedToken;
 }
 
 // ===== BUILD =====
@@ -353,8 +439,7 @@ async function startBuild() {
 
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        handleLogout();
-        showError("Invalid or expired token. Please login again.");
+        showError("GitHub token expired. Contact admin to update it in Settings.");
       } else {
         const errBody = await res.text().catch(() => "");
         showError("Failed to trigger build (HTTP " + res.status + "): " + errBody.slice(0, 300));
