@@ -52,6 +52,9 @@ on:
         required: false
         default: ""
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
 
@@ -112,7 +115,7 @@ jobs:
           convert /tmp/icon.png -resize 96x96 mipmap-xhdpi/ic_launcher.png
           convert /tmp/icon.png -resize 144x144 mipmap-xxhdpi/ic_launcher.png
           convert /tmp/icon.png -resize 192x192 mipmap-xxxhdpi/ic_launcher.png
-          for dir in mipmap-*; do
+          for dir in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
           done
