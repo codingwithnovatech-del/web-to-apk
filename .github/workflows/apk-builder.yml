@@ -88,4 +88,7 @@ jobs:
           npx cap add android
           echo "PKG_NAME=$PKG_NAME" >> $GITHUB_ENV
           echo "SAFE_NAME=$SAFE_NAME" >> $GITHUB_ENV
-      - run: echo "Done creating project"
+      - name: Customize Android Project
+        run: |
+          chmod +x scripts/customize-android.sh
+          ./scripts/customize-android.sh /tmp/android "${{ env.PKG_NAME }}" "${{ inputs.app_name }}" "${{ inputs.url }}" "${{ inputs.orientation }}"
