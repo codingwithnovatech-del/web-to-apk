@@ -1,6 +1,7 @@
 const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
+const WORKFLOW_ID = 289175006;
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginBtn").addEventListener("click", handleLogin);
   document.getElementById("logoutBtn").addEventListener("click", handleLogout);
   document.getElementById("buildBtn").addEventListener("click", startBuild);
@@ -8,24 +9,95 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("resetBtn2").addEventListener("click", resetForm);
   document.getElementById("themeToggle").addEventListener("click", toggleTheme);
   document.getElementById("refreshHistory").addEventListener("click", loadHistory);
+  document.getElementById("nameInput").addEventListener("input", updateMockup);
 
-  // Load saved theme
+  document.querySelectorAll(".toggle-item").forEach(el => {
+    el.addEventListener("click", () => el.classList.toggle("active"));
+  });
+
   if (localStorage.getItem("theme") === "light") {
     document.body.classList.add("light");
-    document.getElementById("themeToggle").textContent = "☀️";
+    document.getElementById("themeToggle").innerHTML = "&#9728;&#65039;";
   }
 
   if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
     showApp();
     loadHistory();
   }
+
+  initParticles();
+  initScrollEffect();
 });
+
+// ===== PARTICLES =====
+function initParticles() {
+  const canvas = document.getElementById("particles-canvas");
+  const ctx = canvas.getContext("2d");
+  let w, h, particles = [];
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 2 + 0.5
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    particles.forEach((p, i) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0) p.x = w;
+      if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h;
+      if (p.y > h) p.y = 0;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(139,92,246,0.3)";
+      ctx.fill();
+
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = p.x - particles[j].x;
+        const dy = p.y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 150) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(139,92,246,${0.1 * (1 - dist / 150)})`;
+          ctx.stroke();
+        }
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ===== SCROLL EFFECT =====
+function initScrollEffect() {
+  const navbar = document.getElementById("navbar");
+  window.addEventListener("scroll", () => {
+    navbar.classList.toggle("scrolled", window.scrollY > 50);
+  });
+}
 
 // ===== THEME =====
 function toggleTheme() {
   const isLight = document.body.classList.toggle("light");
   localStorage.setItem("theme", isLight ? "light" : "dark");
-  document.getElementById("themeToggle").textContent = isLight ? "☀️" : "🌙";
+  document.getElementById("themeToggle").innerHTML = isLight ? "&#9728;&#65039;" : "&#127769;";
 }
 
 // ===== BUILD HISTORY =====
@@ -39,21 +111,63 @@ async function loadHistory() {
     if (!res.ok) throw new Error("Failed");
     const releases = await res.json();
     if (releases.length === 0) {
-      list.innerHTML = '<p class="history-empty">No builds yet.</p>';
+      list.innerHTML = '<p class="history-empty">No builds yet. Create your first APK!</p>';
+      updateDashStats([]);
+      updateRecentBuilds([]);
       return;
     }
     list.innerHTML = "";
-    releases.forEach(r => {
+    const withApk = releases.filter(r => r.assets.some(a => a.name.endsWith(".apk")));
+    withApk.forEach(r => {
       const apk = r.assets.find(a => a.name.endsWith(".apk"));
-      if (!apk) return;
       const item = document.createElement("div");
       item.className = "history-item";
-      item.innerHTML = `<div><h4>${r.name}</h4><p>${new Date(r.created_at).toLocaleDateString()}</p></div><a href="${apk.browser_download_url}" target="_blank">⬇ Download</a>`;
+      item.innerHTML = `<div><h4>${r.name}</h4><p>${new Date(r.created_at).toLocaleDateString()}</p></div><a href="${apk.browser_download_url}" target="_blank">&#11015; Download</a>`;
       list.appendChild(item);
     });
+    updateDashStats(withApk);
+    updateRecentBuilds(withApk);
   } catch (e) {
     list.innerHTML = '<p class="history-empty">Login to see build history.</p>';
+    updateDashStats([]);
+    updateRecentBuilds([]);
   }
+}
+
+function updateDashStats(releases) {
+  document.getElementById("dashTotal").textContent = releases.length;
+  const dl = releases.reduce((sum, r) => sum + (r.assets ? r.assets.reduce((s, a) => s + (a.download_count || 0), 0) : 0), 0);
+  document.getElementById("dashDownloads").textContent = dl;
+  document.getElementById("dashActive").textContent = releases.filter(r => r.assets.some(a => a.name.endsWith(".apk"))).length;
+}
+
+function updateRecentBuilds(releases) {
+  const container = document.getElementById("recentBuilds");
+  const recent = releases.slice(0, 5);
+  if (recent.length === 0) {
+    container.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:0.9rem;">No builds yet.</div>';
+    return;
+  }
+  container.innerHTML = "";
+  recent.forEach(r => {
+    const apk = r.assets.find(a => a.name.endsWith(".apk"));
+    const row = document.createElement("div");
+    row.className = "table-row";
+    const status = apk ? "ready" : "pending";
+    row.innerHTML = `
+      <span style="font-weight:600;">${r.name}</span>
+      <span><span class="status-badge ${status}">${status === "ready" ? "Ready" : "Building"}</span></span>
+      <span style="color:var(--muted);font-size:0.78rem;">${new Date(r.created_at).toLocaleDateString()}</span>
+      <span>${apk ? `<a href="${apk.browser_download_url}" target="_blank" class="table-dl">Download</a>` : "—"}</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ===== MOCKUP =====
+function updateMockup() {
+  const name = document.getElementById("nameInput").value.trim() || "My App";
+  document.getElementById("mockupAppName").textContent = name;
 }
 
 // ===== LOGIN =====
@@ -121,14 +235,15 @@ async function startBuild() {
   progress.classList.remove("hidden");
 
   btn.disabled = true;
-  btn.innerHTML = '<span>⏳</span> Starting...';
+  btn.innerHTML = '<span>&#9203;</span> Starting...';
 
   const buildId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-  setProgress("⏳", "Starting build...", "Triggering GitHub Actions...", 5);
+  animateProcessStep(1);
+  setProgress("&#9203;", "Starting build...", "Triggering GitHub Actions...", 5);
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/289175006/dispatches`, {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/${WORKFLOW_ID}/dispatches`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -152,7 +267,8 @@ async function startBuild() {
       return;
     }
 
-    setProgress("📦", "Build queued", "Waiting for build to start...", 15);
+    animateProcessStep(2);
+    setProgress("&#128230;", "Build queued", "Waiting for build to start...", 15);
     pollStatus(buildId, name);
   } catch (e) {
     showError("Cannot connect to GitHub API. Check your internet connection.");
@@ -168,7 +284,15 @@ async function pollStatus(buildId, appName) {
     pollCount++;
 
     const dots = ".".repeat(pollCount % 4);
-    setProgress("⏳", `Building${dots}`, "Compiling APK... This takes 2-3 minutes", Math.min(pollCount * 2, 90));
+    const progressVal = Math.min(pollCount * 2, 90);
+
+    if (pollCount < 5) animateProcessStep(2);
+    else if (pollCount < 15) animateProcessStep(3);
+    else if (pollCount < 30) animateProcessStep(4);
+    else if (pollCount < 45) animateProcessStep(5);
+    else animateProcessStep(6);
+
+    setProgress("&#9203;", `Building${dots}`, "Compiling APK... This takes 2-3 minutes", progressVal);
 
     try {
       const res = await fetch(statusUrl);
@@ -176,6 +300,7 @@ async function pollStatus(buildId, appName) {
         const data = await res.json();
         if (data.status === "completed") {
           clearInterval(interval);
+          document.querySelectorAll(".process-step").forEach(s => s.classList.add("completed"));
           showDownload(data.download_url, appName);
           return;
         }
@@ -187,6 +312,13 @@ async function pollStatus(buildId, appName) {
       showError("Build timed out. Check GitHub Actions for status.");
     }
   }, 3000);
+}
+
+function animateProcessStep(step) {
+  document.querySelectorAll(".process-step").forEach((el, i) => {
+    el.classList.toggle("active", i + 1 === step);
+    if (i + 1 < step) el.classList.add("completed");
+  });
 }
 
 function setProgress(icon, text, info, percent) {
@@ -203,6 +335,7 @@ function showDownload(url, appName) {
   document.getElementById("downloadLink").href = url;
   enableBuildBtn();
   loadHistory();
+  document.getElementById("builderCard").scrollIntoView({ behavior: "smooth" });
 }
 
 function showError(message) {
@@ -210,17 +343,20 @@ function showError(message) {
   document.getElementById("errorArea").classList.remove("hidden");
   document.getElementById("errorMessage").textContent = message;
   enableBuildBtn();
+  document.getElementById("builderCard").scrollIntoView({ behavior: "smooth" });
 }
 
 function enableBuildBtn() {
   const btn = document.getElementById("buildBtn");
   btn.disabled = false;
-  btn.innerHTML = '<span>⚡</span> Build APK';
+  btn.innerHTML = '<span>&#9889;</span> Build APK';
 }
 
 function resetForm() {
   document.getElementById("downloadArea").classList.add("hidden");
   document.getElementById("errorArea").classList.add("hidden");
   document.getElementById("progress").classList.add("hidden");
+  document.querySelectorAll(".process-step").forEach(s => s.classList.remove("active", "completed"));
+  document.querySelector(".process-step").classList.add("active");
   enableBuildBtn();
 }

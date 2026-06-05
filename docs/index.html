@@ -3,131 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebToAPK - Convert Website to Android App Free</title>
+  <title>WebToAPK — Convert Any Website to Android APK</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF5C7A'%3E%3Cpath d='M17.523 16.432c-.553.502-1.448.734-2.327.734-1.025 0-2.043-.351-2.889-.985-.748.634-1.766.985-2.791.985-.88 0-1.775-.232-2.328-.734-1.378-1.25-1.088-3.503-.404-4.832.637-1.237 1.902-2.314 2.933-2.314.84 0 1.543.466 2.095.934.543.46.91.735 1.393.735.483 0 .85-.275 1.393-.735.552-.468 1.256-.934 2.095-.934 1.031 0 2.296 1.077 2.933 2.314.684 1.329.974 3.583-.404 4.832zM14.5 4.5c0 .828-.672 1.5-1.5 1.5s-1.5-.672-1.5-1.5S12.672 3 13 3s1.5.672 1.5 1.5z'/%3E%3C/svg%3E">
 </head>
 <body>
 
-  <!-- ===== NAVBAR ===== -->
-  <nav class="navbar">
-    <div class="nav-inner">
-      <div class="nav-brand">📱 WebToAPK</div>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#how">How It Works</a>
-        <a href="#history">History</a>
-        <a href="#converter" class="nav-cta">Start Free</a>
-        <a href="admin/" class="nav-link-icon" title="Admin">⚙️</a>
-        <button id="themeToggle" class="theme-btn" title="Toggle theme">🌙</button>
-      </div>
-    </div>
-  </nav>
+<canvas id="particles-canvas"></canvas>
 
-  <!-- ===== HERO ===== -->
-  <section class="hero">
-    <div class="hero-bg"></div>
+<!-- ===== NAVBAR ===== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <div class="nav-brand">WebToAPK</div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#builder" class="nav-cta">Start Building</a>
+      <a href="admin/" class="nav-link-icon" title="Admin">&#9881;</a>
+      <button id="themeToggle" class="theme-btn" title="Theme">&#127769;</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid">
     <div class="hero-content">
-      <div class="hero-badge">🚀 FREE ONLINE TOOL</div>
-      <h1>Website to <span class="gradient-text">Android APK</span></h1>
-      <p class="hero-sub">Convert any website into a professional Android app instantly. No coding required. 100% free.</p>
-      <a href="#converter" class="hero-cta">
-        <span>⚡</span> Start Converting
-      </a>
-      <div class="hero-stats">
-        <div class="stat"><strong>2 min</strong> Build Time</div>
-        <div class="stat"><strong>100%</strong> Free</div>
-        <div class="stat"><strong>APK</strong> Output</div>
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Android 15 Supported
+      </div>
+      <h1>Convert Any Website Into<br><span class="gradient-text">Android APK</span></h1>
+      <p class="hero-sub">Build production-ready Android apps from your website in minutes. No coding required.</p>
+      <div class="hero-actions">
+        <a href="#builder" class="btn-primary"><span>&#9889;</span> Start Building</a>
+        <a href="#features" class="btn-secondary"><span>&#9654;</span> View Demo</a>
+      </div>
+      <div class="hero-trust">
+        <span class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Android 15 Supported</span>
+        <span class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Firebase Ready</span>
+        <span class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Secure APK Signing</span>
+        <span class="trust-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> AdMob Compatible</span>
       </div>
     </div>
-  </section>
+    <div class="hero-mockup">
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-status">
+            <span>9:41</span>
+            <span>&#9889; 85%</span>
+          </div>
+          <div class="phone-app-icon">&#9889;</div>
+          <div class="phone-app-name" id="mockupAppName">My App</div>
+          <div class="phone-splash">Splash Screen Preview</div>
+          <div class="phone-nav">
+            <span class="phone-nav-dot"></span>
+            <span class="phone-nav-dot"></span>
+            <span class="phone-nav-dot active"></span>
+            <span class="phone-nav-dot"></span>
+            <span class="phone-nav-dot"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <!-- ===== FEATURES ===== -->
-  <section class="features" id="features">
-    <h2 class="section-title">Why Choose <span class="gradient-text">WebToAPK</span>?</h2>
+<!-- ===== FEATURES ===== -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Everything You Need</h2>
+    <p class="section-sub">Build professional Android apps with all the features modern apps require.</p>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="fc-icon">⚡</div>
-        <h3>Instant Conversion</h3>
-        <p>Your APK is ready in under 3 minutes. Just enter your URL and we handle everything.</p>
+        <div class="fc-icon">&#9889;</div>
+        <h3>APK Builder</h3>
+        <p>Enter your URL and get a production-ready APK in under 3 minutes.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">📱</div>
-        <h3>Full WebView App</h3>
-        <p>Navigation buttons, pull-to-refresh, progress bar, offline support — all built-in.</p>
+        <div class="fc-icon">&#128640;</div>
+        <h3>Push Notifications</h3>
+        <p>Send push notifications to your app users via Firebase Cloud Messaging.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🔓</div>
-        <h3>100% Free</h3>
-        <p>No hidden charges, no credit card. Convert unlimited websites to APK for free.</p>
+        <div class="fc-icon">&#128293;</div>
+        <h3>Firebase Integration</h3>
+        <p>Full Firebase integration with analytics, auth, and real-time database.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">📦</div>
-        <h3>Google Play Ready</h3>
-        <p>Download your APK and publish it on Google Play Store or any other app store.</p>
+        <div class="fc-icon">&#128176;</div>
+        <h3>AdMob Support</h3>
+        <p>Monetize your app with banner, interstitial, and reward ads.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🎨</div>
-        <h3>Custom App Name</h3>
-        <p>Set your own app name and branding. Your app, your identity.</p>
+        <div class="fc-icon">&#127912;</div>
+        <h3>Splash Screen</h3>
+        <p>Custom splash screen that shows while your app loads.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">🔄</div>
-        <h3>Always Updated</h3>
-        <p>Your app mirrors your website. Update your site, your app updates automatically.</p>
+        <div class="fc-icon">&#128260;</div>
+        <h3>Offline Mode</h3>
+        <p>Cache content and provide offline access to your users.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">📦</div>
-        <h3>AAB + APK</h3>
-        <p>Both APK (direct install) and AAB (Google Play) are generated for each build.</p>
+        <div class="fc-icon">&#128279;</div>
+        <h3>Deep Linking</h3>
+        <p>Handle custom URL schemes and deep links in your app.</p>
       </div>
       <div class="feature-card">
-        <div class="fc-icon">⬇</div>
-        <h3>File Downloads</h3>
-        <p>Download files directly from your website within the app — PDFs, images, docs.</p>
+        <div class="fc-icon">&#128274;</div>
+        <h3>Custom Permissions</h3>
+        <p>Camera, storage, location — control exactly what your app needs.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ===== HOW IT WORKS ===== -->
-  <section class="how-it-works" id="how">
-    <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h3>Enter URL</h3>
-          <p>Paste your website URL and choose your app name.</p>
-        </div>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h3>Build APK</h3>
-          <p>Click build and wait 2-3 minutes while we compile your app.</p>
-        </div>
-      </div>
-      <div class="step-arrow">→</div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h3>Download & Install</h3>
-          <p>Download your APK and install it on any Android device.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+<!-- ===== APK BUILDER ===== -->
+<section class="builder-section" id="builder">
+  <div class="section-inner">
+    <p class="section-label">APK Builder</p>
+    <h2 class="section-title">Build Your App</h2>
+    <p class="section-sub">Enter your website details and generate a custom Android APK.</p>
 
-  <!-- ===== CONVERTER SECTION ===== -->
-  <section class="converter-section" id="converter">
-
-    <!-- Login Form -->
-    <div id="loginScreen">
-      <div class="converter-card">
-        <div class="card-header">
-          <span>🔑</span>
+    <div class="builder-card" id="builderCard">
+      <!-- Login -->
+      <div id="loginScreen">
+        <div class="builder-header">
+          <div class="icon">&#128273;</div>
           <h2>Login to Continue</h2>
-          <p>Enter your details to start building</p>
+          <p>Enter your GitHub token to start building</p>
         </div>
         <div class="form-group">
           <label>Your Name</label>
@@ -136,25 +144,21 @@
         <div class="form-group">
           <label>GitHub Token</label>
           <input type="password" id="loginToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-          <p class="field-hint">Required for GitHub API. <a href="https://github.com/settings/tokens" target="_blank">Create token →</a></p>
+          <p class="field-hint">Required for GitHub API. <a href="https://github.com/settings/tokens" target="_blank">Create token &#8599;</a></p>
         </div>
-        <button id="loginBtn" class="btn-primary">
-          <span>🔑</span> Login
-        </button>
+        <button id="loginBtn" class="btn-primary"><span>&#128273;</span> Login</button>
       </div>
-    </div>
 
-    <!-- Build Form -->
-    <div id="appScreen" class="hidden">
-      <div class="converter-card">
-        <div class="card-header">
-          <span>⚡</span>
-          <h2>Build Your APK</h2>
-          <p>Enter your website URL and app name</p>
-        </div>
+      <!-- Build Form -->
+      <div id="appScreen" class="hidden">
         <div class="top-bar">
           <span id="greeting" class="greeting"></span>
           <button id="logoutBtn" class="btn-text">Logout</button>
+        </div>
+        <div class="builder-header">
+          <div class="icon">&#9889;</div>
+          <h2>Build Your APK</h2>
+          <p>Configure your app settings below</p>
         </div>
         <div class="form-group">
           <label>Website URL</label>
@@ -165,7 +169,7 @@
           <input type="text" id="nameInput" placeholder="My Awesome App" maxlength="50">
         </div>
         <div class="form-group">
-          <label>Version (optional)</label>
+          <label>Version</label>
           <input type="text" id="versionInput" placeholder="1.0.0" value="1.0.0">
         </div>
         <div class="form-group">
@@ -184,67 +188,283 @@
             <option value="landscape">Landscape</option>
           </select>
         </div>
-        <button id="buildBtn" class="btn-primary btn-build">
-          <span>⚡</span> Build APK
-        </button>
-      </div>
-    </div>
 
-    <!-- Progress -->
-    <div id="progress" class="hidden">
-      <div class="progress-card">
+        <p style="font-size:0.8rem;font-weight:600;color:var(--muted);margin-bottom:10px;">Additional Features</p>
+        <div class="toggle-group">
+          <div class="toggle-item" data-toggle="splash">
+            <span class="toggle-switch"></span> Splash Screen
+          </div>
+          <div class="toggle-item" data-toggle="refresh">
+            <span class="toggle-switch"></span> Pull To Refresh
+          </div>
+          <div class="toggle-item" data-toggle="offline">
+            <span class="toggle-switch"></span> Offline Page
+          </div>
+          <div class="toggle-item" data-toggle="admob">
+            <span class="toggle-switch"></span> AdMob Integration
+          </div>
+          <div class="toggle-item" data-toggle="firebase">
+            <span class="toggle-switch"></span> Firebase Integration
+          </div>
+          <div class="toggle-item" data-toggle="notifications">
+            <span class="toggle-switch"></span> Push Notifications
+          </div>
+        </div>
+
+        <button id="buildBtn" class="btn-primary btn-build"><span>&#9889;</span> Build APK</button>
+      </div>
+
+      <!-- Progress -->
+      <div id="progress" class="hidden">
         <div class="progress-header">
-          <span id="statusIcon">⏳</span>
+          <span id="statusIcon">&#9203;</span>
           <span id="statusText">Starting build...</span>
         </div>
         <div class="progress-bar"><div id="progressFill"></div></div>
         <p class="progress-info" id="progressInfo">This takes 2-3 minutes</p>
       </div>
-    </div>
 
-    <!-- Download -->
-    <div id="downloadArea" class="hidden">
-      <div class="result-card success">
-        <div class="result-icon">✅</div>
-        <h2>Build Complete!</h2>
-        <p id="downloadAppName" class="result-name"></p>
-        <a id="downloadLink" class="btn-primary btn-download" target="_blank">
-          <span>⬇</span> Download APK
-        </a>
-        <button id="resetBtn1" class="btn-text">+ Convert Another</button>
+      <!-- Success -->
+      <div id="downloadArea" class="hidden">
+        <div class="result-card success">
+          <div class="result-icon">&#9989;</div>
+          <h2>Build Complete!</h2>
+          <p id="downloadAppName" class="result-name"></p>
+          <a id="downloadLink" class="btn-primary btn-download" target="_blank"><span>&#11015;</span> Download APK</a>
+          <button id="resetBtn1" class="btn-text" style="width:auto;margin:12px auto 0;display:inline-block;">+ Convert Another</button>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="errorArea" class="hidden">
+        <div class="result-card error">
+          <div class="result-icon">&#10060;</div>
+          <h2>Build Failed</h2>
+          <p id="errorMessage" class="result-name"></p>
+          <button id="resetBtn2" class="btn-text" style="width:auto;margin:12px auto 0;display:inline-block;">Try Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BUILD PROCESS ===== -->
+<section class="process-section">
+  <div class="section-inner">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-title">Build Process</h2>
+    <p class="section-sub">Your website is converted into a fully signed Android APK in minutes.</p>
+    <div class="process-timeline">
+      <div class="process-step active" id="step1">
+        <div class="step-dot">1</div>
+        <div class="step-content">
+          <h4>Validate Website</h4>
+          <p>We check your URL is accessible and ready for conversion.</p>
+        </div>
+      </div>
+      <div class="process-step" id="step2">
+        <div class="step-dot">2</div>
+        <div class="step-content">
+          <h4>Generate Android Project</h4>
+          <p>Capacitor creates a native Android project from your web app.</p>
+        </div>
+      </div>
+      <div class="process-step" id="step3">
+        <div class="step-dot">3</div>
+        <div class="step-content">
+          <h4>Configure WebView</h4>
+          <p>Custom WebView with navigation, pull-to-refresh, and more.</p>
+        </div>
+      </div>
+      <div class="process-step" id="step4">
+        <div class="step-dot">4</div>
+        <div class="step-content">
+          <h4>Build APK</h4>
+          <p>Gradle compiles your app into a release-ready APK.</p>
+        </div>
+      </div>
+      <div class="process-step" id="step5">
+        <div class="step-dot">5</div>
+        <div class="step-content">
+          <h4>Sign APK</h4>
+          <p>Your APK is signed with a secure keystore for installation.</p>
+        </div>
+      </div>
+      <div class="process-step" id="step6">
+        <div class="step-dot">6</div>
+        <div class="step-content">
+          <h4>Generate Download Link</h4>
+          <p>Your signed APK and AAB are ready to download.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== USER DASHBOARD ===== -->
+<section class="dashboard-section">
+  <div class="section-inner">
+    <p class="section-label">Dashboard</p>
+    <h2 class="section-title">Your Analytics</h2>
+    <p class="section-sub">Track your builds and downloads at a glance.</p>
+    <div class="dashboard-grid">
+      <div class="dash-card">
+        <div class="dash-icon" style="background:rgba(255,92,122,0.1);color:var(--primary);">&#128230;</div>
+        <div class="dash-value" id="dashTotal">0</div>
+        <div class="dash-label">Total APK Builds</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon" style="background:rgba(34,197,94,0.1);color:var(--success);">&#11015;</div>
+        <div class="dash-value" id="dashDownloads">0</div>
+        <div class="dash-label">Downloads</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon" style="background:rgba(139,92,246,0.1);color:var(--secondary);">&#128187;</div>
+        <div class="dash-value" id="dashActive">0</div>
+        <div class="dash-label">Active Apps</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-icon" style="background:rgba(255,255,255,0.05);color:var(--muted);">&#9889;</div>
+        <div class="dash-value" id="dashCredits">&infin;</div>
+        <div class="dash-label">Remaining Credits</div>
       </div>
     </div>
 
-    <!-- Error -->
-    <div id="errorArea" class="hidden">
-      <div class="result-card error">
-        <div class="result-icon">❌</div>
-        <h2>Build Failed</h2>
-        <p id="errorMessage" class="result-name"></p>
-        <button id="resetBtn2" class="btn-text">Try Again</button>
+    <p style="font-size:0.9rem;font-weight:700;margin-bottom:12px;">Recent Builds</p>
+    <div class="table-container">
+      <div class="table-header">
+        <span>App Name</span>
+        <span>Status</span>
+        <span>Date</span>
+        <span>Download</span>
+      </div>
+      <div id="recentBuilds">
+        <div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:0.9rem;">Login to see your builds.</div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ===== BUILD HISTORY ===== -->
-  <section class="history-section" id="history">
-    <h2 class="section-title">Build <span class="gradient-text">History</span></h2>
+<!-- ===== BUILD HISTORY ===== -->
+<section class="history-section" id="history">
+  <div class="section-inner">
+    <p class="section-label">History</p>
+    <h2 class="section-title">Build History</h2>
+    <p class="section-sub">All your previous APK builds in one place.</p>
     <div class="history-card">
+      <div class="top-bar" style="margin-bottom:8px;">
+        <span style="font-size:0.9rem;font-weight:600;">Recent Releases</span>
+        <button id="refreshHistory" class="btn-text" style="width:auto;">Refresh</button>
+      </div>
       <div id="historyList" class="history-list">
         <p class="history-empty">No builds yet. Login and create your first APK!</p>
       </div>
-      <button id="refreshHistory" class="btn-text">🔄 Refresh</button>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ===== FOOTER ===== -->
-  <footer class="footer">
-    <p>© 2026 <strong>WebToAPK</strong> — Free Website to Android APK Converter</p>
-    <p class="footer-links">
-      Built with ❤️ | <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank">GitHub</a> | <a href="admin/">Admin Panel</a>
-    </p>
-  </footer>
+<!-- ===== PRICING ===== -->
+<section class="pricing-section" id="pricing">
+  <div class="section-inner">
+    <p class="section-label">Pricing</p>
+    <h2 class="section-title">Simple, Transparent Pricing</h2>
+    <p class="section-sub">Start free, upgrade when you need more power.</p>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <div class="pricing-name">Free</div>
+        <div class="pricing-price">$0 <span>/mo</span></div>
+        <div class="pricing-desc">Perfect for getting started</div>
+        <ul class="pricing-features">
+          <li>Unlimited APK builds</li>
+          <li>Basic WebView features</li>
+          <li>APK + AAB output</li>
+          <li>Custom app name & icon</li>
+          <li class="missing">Push notifications</li>
+          <li class="missing">AdMob integration</li>
+          <li class="missing">Priority support</li>
+        </ul>
+        <button class="pricing-btn">Get Started</button>
+      </div>
+      <div class="pricing-card featured">
+        <div class="pricing-name">Pro</div>
+        <div class="pricing-price">$9 <span>/mo</span></div>
+        <div class="pricing-desc">For professional developers</div>
+        <ul class="pricing-features">
+          <li>Unlimited APK builds</li>
+          <li>All WebView features</li>
+          <li>APK + AAB output</li>
+          <li>Custom app name & icon</li>
+          <li>Push notifications</li>
+          <li>AdMob integration</li>
+          <li class="missing">Priority support</li>
+        </ul>
+        <button class="pricing-btn">Upgrade to Pro</button>
+      </div>
+      <div class="pricing-card">
+        <div class="pricing-name">Enterprise</div>
+        <div class="pricing-price">$29 <span>/mo</span></div>
+        <div class="pricing-desc">For teams & agencies</div>
+        <ul class="pricing-features">
+          <li>Unlimited APK builds</li>
+          <li>All WebView features</li>
+          <li>APK + AAB output</li>
+          <li>Custom app name & icon</li>
+          <li>Push notifications</li>
+          <li>AdMob integration</li>
+          <li>Priority support</li>
+        </ul>
+        <button class="pricing-btn">Contact Us</button>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <script src="script.js"></script>
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <h3>WebToAPK</h3>
+      <p>Convert any website into a professional Android application in minutes. No coding required.</p>
+      <div class="footer-social">
+        <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank" title="GitHub">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.73.083-.73 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0z"/></svg>
+        </a>
+        <a href="#" target="_blank" title="Discord">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028 14.09 14.09 0 001.226-1.994.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+        </a>
+        <a href="#" target="_blank" title="Telegram">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#builder">APK Builder</a>
+      <a href="#history">Build History</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">Contact</a>
+      <a href="admin/">Admin Panel</a>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <a href="https://github.com/codingwithnovatech-del/web-to-apk" target="_blank">GitHub</a>
+      <a href="#">Documentation</a>
+      <a href="#">API Reference</a>
+      <a href="#">Status</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 WebToAPK. All rights reserved.</span>
+    <span>Built with &#10084;&#65039; for the Android community</span>
+  </div>
+</footer>
+
+<script src="script.js"></script>
 </body>
 </html>
