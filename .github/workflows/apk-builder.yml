@@ -103,6 +103,7 @@ jobs:
       - name: Custom Icon
         if: inputs.icon_url != ''
         run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
           cd /tmp/android/app/src/main/res
           mkdir -p mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi
           curl -sL "${{ inputs.icon_url }}" -o /tmp/icon.png
