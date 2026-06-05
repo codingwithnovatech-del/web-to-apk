@@ -128,23 +128,23 @@ jobs:
           sed -i "s|versionCode .*|versionCode $VCODE|" app/build.gradle
           if [ -n "${{ inputs.keystore_b64 }}" ]; then
             echo "${{ inputs.keystore_b64 }}" | base64 -d > /tmp/release.keystore
-            STORE_PASS="${{ inputs.keystore_pass }}"
-            KEY_ALIAS="${{ inputs.key_alias }}"
-            KEY_PASS="${{ inputs.key_pass }}"
+            SP="${{ inputs.keystore_pass }}"
+            KA="${{ inputs.key_alias }}"
+            KP="${{ inputs.key_pass }}"
           else
-            STORE_PASS="webtoapk"
-            KEY_ALIAS="webtoapk"
-            KEY_PASS="webtoapk"
-            keytool -genkey -v -keystore /tmp/release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$KEY_PASS" -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
+            SP="webtoapk"
+            KA="webtoapk"
+            KP="webtoapk"
+            keytool -genkey -v -keystore /tmp/release.keystore -alias "$KA" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$SP" -keypass "$KP" -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
           fi
           echo "" >> app/build.gradle
           echo "android {" >> app/build.gradle
           echo "    signingConfigs {" >> app/build.gradle
           echo "        release {" >> app/build.gradle
           echo "            storeFile file(\"/tmp/release.keystore\")" >> app/build.gradle
-          echo "            storePassword \"$STORE_PASS\"" >> app/build.gradle
-          echo "            keyAlias \"$KEY_ALIAS\"" >> app/build.gradle
-          echo "            keyPassword \"$KEY_PASS\"" >> app/build.gradle
+          echo "            storePassword \"${SP}\"" >> app/build.gradle
+          echo "            keyAlias \"${KA}\"" >> app/build.gradle
+          echo "            keyPassword \"${KP}\"" >> app/build.gradle
           echo "        }" >> app/build.gradle
           echo "    }" >> app/build.gradle
           echo "    buildTypes {" >> app/build.gradle
