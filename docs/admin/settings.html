@@ -21,6 +21,11 @@
     <div class="page-header"><h1>Settings</h1></div>
     <form id="settingsForm" onsubmit="saveSettings();return false">
     <div class="card">
+      <h2>GitHub Token</h2>
+      <div class="form-group"><label>GitHub Personal Access Token</label><input type="password" id="set_github_token" placeholder="ghp_... or github_pat_..."></div>
+      <p style="font-size:11px;color:#888;margin-top:-12px;margin-bottom:16px">Token is stored in Firestore. Users don't need to log in.</p>
+    </div>
+    <div class="card">
       <h2>Build Limits</h2>
       <div class="form-group"><label>Daily Free Limit</label><input type="number" id="set_daily_limit" value="3"></div>
       <div class="form-group"><label>Branding</label><select id="set_branding_enabled"><option value="true">Enabled (show Powered by WebToAPK)</option><option value="false">Disabled</option></select></div>

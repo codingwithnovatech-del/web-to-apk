@@ -39,7 +39,8 @@ function onAuth() {
 async function initStore() {
   if (!localStorage.getItem("admin_settings")) {
     localStorage.setItem("admin_settings", JSON.stringify({
-      daily_limit: 3, branding_enabled: true, upi_id: "@tsayush", upi_qr_url: "",
+      daily_limit: 3, branding_enabled: true, github_token: "",
+      upi_id: "@tsayush", upi_qr_url: "",
       free_price: 99, paid_price: 499, adsense_id: "", affiliate_link: "", namecheap_link: ""
     }));
   }

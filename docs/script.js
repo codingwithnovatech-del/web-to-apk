@@ -2,6 +2,8 @@ const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
 const WORKFLOW_FILE = "apk-builder.yml";
 
 let fbUser = null;
+let cachedToken = localStorage.getItem("github_token") || "";
+
 try {
   if (typeof firebase !== "undefined" && firebase.auth) {
     firebase.auth().onAuthStateChanged(u => { fbUser = u; });
@@ -9,9 +11,18 @@ try {
   }
 } catch (e) {}
 
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("loginBtn").addEventListener("click", handleLogin);
-  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+async function loadTokenFromFirestore() {
+  if (typeof firebase === "undefined" || !firebase.firestore) return;
+  try {
+    const snap = await firebase.firestore().collection("settings").doc("default").get();
+    if (snap.exists && snap.data().github_token) {
+      cachedToken = snap.data().github_token;
+      localStorage.setItem("github_token", cachedToken);
+    }
+  } catch {}
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("buildBtn").addEventListener("click", startBuild);
   document.getElementById("resetBtn1").addEventListener("click", resetForm);
   document.getElementById("resetBtn2").addEventListener("click", resetForm);
@@ -29,9 +40,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("themeToggle").innerHTML = "&#9728;&#65039;";
   }
 
-  if (localStorage.getItem("github_token") && localStorage.getItem("github_user")) {
-    showApp();
+  await loadTokenFromFirestore();
+
+  if (cachedToken) {
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("appScreen").classList.remove("hidden");
     loadHistory();
+  } else {
+    document.getElementById("loginScreen").classList.remove("hidden");
+    document.getElementById("appScreen").classList.add("hidden");
   }
 
   initParticles();
@@ -249,13 +266,13 @@ function showApp() {
 }
 
 function getToken() {
-  return localStorage.getItem("github_token");
+  return cachedToken;
 }
 
 // ===== BUILD =====
 async function startBuild() {
   const token = getToken();
-  if (!token) { handleLogout(); showError("Session expired. Please login again."); return; }
+  if (!token) { showError("Setup required: Admin needs to add GitHub token in Settings."); return; }
 
   const url = document.getElementById("urlInput").value.trim();
   const name = document.getElementById("nameInput").value.trim();
