@@ -43,13 +43,7 @@ async function initStore() {
       free_price: 99, paid_price: 499, adsense_id: "", affiliate_link: "", namecheap_link: ""
     }));
   }
-  if (!localStorage.getItem("admin_users")) {
-    localStorage.setItem("admin_users", JSON.stringify([
-      { id: "demo_user_1", tier: "free", builds_today: 0, last_build_date: "", banned: false },
-      { id: "demo_user_2", tier: "paid", builds_today: 0, last_build_date: "", banned: false }
-    ]));
-  }
-  if (!localStorage.getItem("admin_builds")) localStorage.setItem("admin_builds", "[]");
+  if (!localStorage.getItem("admin_users")) localStorage.setItem("admin_users", "[]");
   if (!localStorage.getItem("admin_payments")) localStorage.setItem("admin_payments", "[]");
   if (!localStorage.getItem("admin_store")) localStorage.setItem("admin_store", "[]");
 
@@ -59,9 +53,28 @@ async function initStore() {
       const snap = await ref.get();
       if (!snap.exists) {
         await ref.set(JSON.parse(localStorage.getItem("admin_settings")));
+      } else {
+        localStorage.setItem("admin_settings", JSON.stringify(snap.data()));
       }
     } catch {}
   }
+}
+
+const GITHUB_REPO = "codingwithnovatech-del/web-to-apk";
+let cachedReleases = null;
+
+async function fetchGitHubReleases(force) {
+  if (cachedReleases && !force) return cachedReleases;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=50`, {
+      headers: { Accept: "application/vnd.github.v3+json" }
+    });
+    if (res.ok) {
+      cachedReleases = await res.json();
+      return cachedReleases;
+    }
+  } catch {}
+  return [];
 }
 
 function adminLogin() {
@@ -121,28 +134,26 @@ async function getSettings() {
 
 async function loadDashboard() {
   try {
-    let builds = getStore("admin_builds");
-    if (useFirebase) {
-      try {
-        const snap = await db.collection("builds").get();
-        builds = snap.docs.map(d => d.data());
-        setStore("admin_builds", builds);
-      } catch {}
-    }
-    const users = getStore("admin_users");
+    const releases = await fetchGitHubReleases();
+    const apkBuilds = releases.filter(r => r.assets?.some(a => a.name.endsWith(".apk")));
     const today = new Date().toISOString().slice(0, 10);
-    const todayBuilds = builds.filter(b => b.created_at?.startsWith(today));
-    document.getElementById("statTotal").textContent = builds.length;
-    document.getElementById("statSuccess").textContent = builds.filter(b => b.status === "completed").length;
+    const todayBuilds = apkBuilds.filter(r => r.created_at?.startsWith(today));
+    let fbUsers = [];
+    if (useFirebase) { try { const snap = await db.collection("users").get(); fbUsers = snap.docs.map(d => d.data()); } catch {} }
+    document.getElementById("statTotal").textContent = apkBuilds.length;
+    document.getElementById("statSuccess").textContent = apkBuilds.length;
     document.getElementById("statToday").textContent = todayBuilds.length;
-    document.getElementById("statUsers").textContent = users.length;
-    await loadChart(7, builds);
-    const recent = builds.slice(-5).reverse();
+    document.getElementById("statUsers").textContent = fbUsers.length;
+    await loadChart(7, apkBuilds);
+    const recent = apkBuilds.slice(0, 5);
     document.getElementById("recentBuilds").innerHTML = recent.length
-      ? recent.map(b => `<div style="padding:8px 0;border-bottom:1px solid #1f1f30;display:flex;justify-content:space-between">
-          <div><strong>${b.app_name || "—"}</strong><br><span style="font-size:0.75rem;color:#888">${b.url || b.device_id || ""}</span></div>
-          <span class="status-badge ${b.status || "pending"}">${b.status || "pending"}</span>
-        </div>`).join("")
+      ? recent.map(r => {
+          const apk = r.assets?.find(a => a.name.endsWith(".apk"));
+          return `<div style="padding:8px 0;border-bottom:1px solid #1f1f30;display:flex;justify-content:space-between">
+            <div><strong>${r.name}</strong><br><span style="font-size:0.75rem;color:#888">${r.html_url || ""}</span></div>
+            <span class="status-badge completed">completed</span>
+          </div>`;
+        }).join("")
       : '<p class="text-muted">No builds yet</p>';
   } catch (e) {
     document.querySelector(".stats-grid").innerHTML = `<div class="card"><p style="color:#ff453a">Error loading dashboard</p></div>`;
@@ -151,14 +162,14 @@ async function loadDashboard() {
 
 let chartInstance = null;
 
-async function loadChart(days, builds) {
+async function loadChart(days, releases) {
   try {
-    if (!builds) builds = getStore("admin_builds");
+    if (!releases) releases = await fetchGitHubReleases();
     const chart = [];
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().slice(0, 10);
-      chart.push({ date: dateStr.slice(5), success: builds.filter(b => b.created_at?.startsWith(dateStr)).length });
+      chart.push({ date: dateStr.slice(5), success: releases.filter(r => r.created_at?.startsWith(dateStr)).length });
     }
     const ctx = document.getElementById("chartCanvas");
     if (!ctx) return;
@@ -179,23 +190,29 @@ async function loadChart(days, builds) {
 }
 
 async function loadBuilds() {
-  let builds = getStore("admin_builds");
-  if (useFirebase) {
+  const releases = await fetchGitHubReleases(true);
+  const apkBuilds = releases.filter(r => r.assets?.some(a => a.name.endsWith(".apk")));
+  let fbBuilds = [];
+  if (useFirebase && firebase.apps.length) {
     try { const snap = await db.collection("builds").orderBy("created_at", "desc").limit(50).get();
-      builds = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setStore("admin_builds", builds); } catch {}
+      fbBuilds = snap.docs.map(d => ({ id: d.id, ...d.data() })); } catch {}
   }
+  const allBuilds = apkBuilds.map(r => ({
+    id: r.tag_name || r.id, url: r.body || r.html_url || "—",
+    app_name: r.name || "—", status: "completed",
+    created_at: r.created_at, download_url: r.assets?.find(a => a.name.endsWith(".apk"))?.browser_download_url
+  }));
   const tbody = document.getElementById("buildsTableBody");
   if (!tbody) return;
-  if (!builds.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No builds</td></tr>`; return; }
-  tbody.innerHTML = builds.map(b => `<tr>
+  if (!allBuilds.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No builds</td></tr>`; return; }
+  tbody.innerHTML = allBuilds.map(b => `<tr>
     <td><input type="checkbox" class="build-check" value="${b.id}"></td>
     <td>${(b.id || "").slice(0, 12)}</td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.url || "—"}</td>
-    <td>${b.app_name || "—"}</td>
-    <td><span class="status-badge ${b.status || "pending"}">${b.status || "pending"}</span></td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.url}</td>
+    <td>${b.app_name}</td>
+    <td><span class="status-badge completed">completed</span></td>
     <td>${b.created_at ? new Date(b.created_at).toLocaleDateString() : "—"}</td>
-    <td><button class="btn-sm danger" onclick="deleteLocalBuild('${b.id}')">&#128465;</button></td>
+    <td>${b.download_url ? `<a href="${b.download_url}" target="_blank" class="btn-sm">Download</a>` : "—"}</td>
   </tr>`).join("");
 }
 
@@ -211,14 +228,17 @@ function deleteLocalBuild(id) {
 }
 
 async function loadUsers() {
-  let users = getStore("admin_users");
-  if (useFirebase) {
+  let users = [];
+  if (useFirebase && firebase.apps.length) {
     try { const snap = await db.collection("users").limit(100).get();
-      users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setStore("admin_users", users); } catch {}
+      users = snap.docs.map(d => ({ id: d.id, ...d.data() })); } catch {}
   }
   const tbody = document.getElementById("usersTableBody");
   if (!tbody) return;
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#888">No users yet. Users appear after someone builds an APK.</td></tr>`;
+    return;
+  }
   tbody.innerHTML = users.map(u => `<tr>
     <td style="font-family:monospace;font-size:0.8rem">${(u.id || "").slice(0, 16)}</td>
     <td><span class="status-badge">${u.tier || "free"}</span></td>
