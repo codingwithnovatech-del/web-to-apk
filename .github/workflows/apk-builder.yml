@@ -119,7 +119,7 @@ jobs:
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_foreground.png"
             cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
           done
-      - name: Set Version and Keystore
+      - name: Set Version, Keystore and Signing Config
         run: |
           cd /tmp/android
           VERSION="${{ inputs.app_version }}"
@@ -137,17 +137,14 @@ jobs:
             KEY_PASS="webtoapk"
             keytool -genkey -v -keystore /tmp/release.keystore -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 10000 -storepass "$STORE_PASS" -keypass "$KEY_PASS" -dname "CN=WebToAPK, OU=App, O=WebToAPK, L=City, ST=State, C=IN"
           fi
-      - name: Add Release Signing Config
-        run: |
-          cd /tmp/android
           echo "" >> app/build.gradle
           echo "android {" >> app/build.gradle
           echo "    signingConfigs {" >> app/build.gradle
           echo "        release {" >> app/build.gradle
-          echo '            storeFile file("/tmp/release.keystore")' >> app/build.gradle
-          echo '            storePassword "$STORE_PASS"' >> app/build.gradle
-          echo '            keyAlias "$KEY_ALIAS"' >> app/build.gradle
-          echo '            keyPassword "$KEY_PASS"' >> app/build.gradle
+          echo "            storeFile file(\"/tmp/release.keystore\")" >> app/build.gradle
+          echo "            storePassword \"$STORE_PASS\"" >> app/build.gradle
+          echo "            keyAlias \"$KEY_ALIAS\"" >> app/build.gradle
+          echo "            keyPassword \"$KEY_PASS\"" >> app/build.gradle
           echo "        }" >> app/build.gradle
           echo "    }" >> app/build.gradle
           echo "    buildTypes {" >> app/build.gradle
