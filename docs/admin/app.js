@@ -5,24 +5,26 @@ let fbReady = false;
 const DEMO_ADMIN = { email: "admin@webtoapk.app", password: "admin123" };
 
 try {
-  auth.onAuthStateChanged(u => {
-    currentUser = u;
-    fbReady = true;
-    onAuth();
-  });
-  setTimeout(() => { if (!fbReady) { useFirebase = false; onAuth(); } }, 3000);
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().onAuthStateChanged(u => {
+      currentUser = u;
+      fbReady = true;
+      onAuth();
+    });
+    setTimeout(() => { if (!fbReady) { useFirebase = false; onAuth(); } }, 3000);
+  } else {
+    useFirebase = false;
+    setTimeout(onAuth, 100);
+  }
 } catch (e) { useFirebase = false; setTimeout(onAuth, 100); }
 
 function onAuth() {
   initStore();
   const nameEl = document.getElementById("userName");
   if (nameEl) nameEl.textContent = currentUser?.email || localStorage.getItem("admin_user") || "Admin";
-  if (!currentUser && !useFirebase && window.location.pathname.endsWith("index.html")) {
-    return;
-  }
+  if (!currentUser && !useFirebase && window.location.pathname.endsWith("index.html")) return;
   if (!currentUser && !window.location.pathname.endsWith("index.html") && !window.location.pathname.endsWith("admin/")) {
-    const localUser = localStorage.getItem("admin_token");
-    if (!localUser) { window.location.href = "index.html"; return; }
+    if (!localStorage.getItem("admin_token")) { window.location.href = "index.html"; return; }
   }
   if (currentUser && window.location.pathname.endsWith("index.html")) {
     window.location.href = "dashboard.html";
@@ -48,7 +50,7 @@ async function initStore() {
   if (!localStorage.getItem("admin_payments")) localStorage.setItem("admin_payments", "[]");
   if (!localStorage.getItem("admin_store")) localStorage.setItem("admin_store", "[]");
 
-  if (useFirebase) {
+  if (useFirebase && typeof db !== "undefined") {
     try {
       const ref = db.collection("settings").doc("default");
       const snap = await ref.get();
@@ -70,10 +72,7 @@ async function fetchGitHubReleases(force) {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=50`, {
       headers: { Accept: "application/vnd.github.v3+json" }
     });
-    if (res.ok) {
-      cachedReleases = await res.json();
-      return cachedReleases;
-    }
+    if (res.ok) { cachedReleases = await res.json(); return cachedReleases; }
   } catch {}
   return [];
 }
@@ -82,21 +81,16 @@ function adminLogin() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
   const errEl = document.getElementById("loginError");
-  if (!email || !password) {
-    errEl.textContent = "Enter email and password";
-    errEl.classList.remove("hidden");
-    return;
-  }
-  if (useFirebase && typeof auth !== "undefined") {
-    auth.signInWithEmailAndPassword(email, password).catch(e => {
+  if (!email || !password) { errEl.textContent = "Enter email and password"; errEl.classList.remove("hidden"); return; }
+  if (useFirebase && typeof firebase !== "undefined" && firebase.auth) {
+    firebase.auth().signInWithEmailAndPassword(email, password).then(() => {
+      window.location.href = "dashboard.html";
+    }).catch(e => {
       if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
         localStorage.setItem("admin_token", "local_demo");
         localStorage.setItem("admin_user", email);
         window.location.href = "dashboard.html";
-      } else {
-        errEl.textContent = e.message;
-        errEl.classList.remove("hidden");
-      }
+      } else { errEl.textContent = e.message; errEl.classList.remove("hidden"); }
     });
   } else {
     if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
@@ -111,7 +105,7 @@ function adminLogin() {
 }
 
 function adminLogout() {
-  if (useFirebase && currentUser) { try { auth.signOut(); } catch {} }
+  if (useFirebase && currentUser && typeof firebase !== "undefined") { try { firebase.auth().signOut(); } catch {} }
   localStorage.removeItem("admin_token");
   localStorage.removeItem("admin_user");
   currentUser = null;
@@ -126,7 +120,7 @@ function setStore(key, data) { localStorage.setItem(key, JSON.stringify(data)); 
 
 async function getSettings() {
   let s = getStore("admin_settings") || {};
-  if (useFirebase) {
+  if (useFirebase && typeof db !== "undefined") {
     try { const snap = await db.collection("settings").doc("default").get();
       if (snap.exists) { s = snap.data(); setStore("admin_settings", s); } } catch {}
   }
@@ -140,9 +134,9 @@ async function loadDashboard() {
     const today = new Date().toISOString().slice(0, 10);
     const todayBuilds = apkBuilds.filter(r => r.created_at?.startsWith(today));
     let fbUsers = [];
-    if (useFirebase) { try { const snap = await db.collection("users").get(); fbUsers = snap.docs.map(d => d.data()); } catch {} }
+    if (useFirebase && typeof db !== "undefined") { try { const snap = await db.collection("users").get(); fbUsers = snap.docs.map(d => d.data()); } catch {} }
     document.getElementById("statTotal").textContent = apkBuilds.length;
-    document.getElementById("statSuccess").textContent = apkBuilds.length;
+    document.getElementById("statSuccess").textContent = apkBuilds.filter(r => r.assets?.some(a => a.name.endsWith(".apk"))).length;
     document.getElementById("statToday").textContent = todayBuilds.length;
     document.getElementById("statUsers").textContent = fbUsers.length;
     await loadChart(7, apkBuilds);
@@ -157,12 +151,12 @@ async function loadDashboard() {
         }).join("")
       : '<p class="text-muted">No builds yet</p>';
   } catch (e) {
-    document.querySelector(".stats-grid").innerHTML = `<div class="card"><p style="color:#ff453a">Error loading dashboard</p></div>`;
+    const grid = document.querySelector(".stats-grid");
+    if (grid) grid.innerHTML = `<div class="card"><p style="color:#ff453a">Error loading dashboard</p></div>`;
   }
 }
 
 let chartInstance = null;
-
 async function loadChart(days, releases) {
   try {
     if (!releases) releases = await fetchGitHubReleases();
@@ -187,17 +181,12 @@ async function loadChart(days, releases) {
     document.querySelectorAll("#chartBtns .btn-sm").forEach(b => b.classList.remove("active"));
     const btns = document.querySelectorAll("#chartBtns .btn-sm");
     btns.forEach(b => { if (b.textContent.trim() == days + "D") b.classList.add("active"); });
-  } catch (e) {}
+  } catch {}
 }
 
 async function loadBuilds() {
   const releases = await fetchGitHubReleases(true);
   const apkBuilds = releases.filter(r => r.assets?.some(a => a.name.endsWith(".apk")));
-  let fbBuilds = [];
-  if (useFirebase && firebase.apps.length) {
-    try { const snap = await db.collection("builds").orderBy("created_at", "desc").limit(50).get();
-      fbBuilds = snap.docs.map(d => ({ id: d.id, ...d.data() })); } catch {}
-  }
   const allBuilds = apkBuilds.map(r => ({
     id: r.tag_name || r.id, url: r.body || r.html_url || "—",
     app_name: r.name || "—", status: "completed",
@@ -208,7 +197,7 @@ async function loadBuilds() {
   if (!allBuilds.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No builds</td></tr>`; return; }
   tbody.innerHTML = allBuilds.map(b => `<tr>
     <td><input type="checkbox" class="build-check" value="${b.id}"></td>
-    <td>${(b.id || "").slice(0, 12)}</td>
+    <td>${(b.id || "").toString().slice(0, 12)}</td>
     <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${b.url}</td>
     <td>${b.app_name}</td>
     <td><span class="status-badge completed">completed</span></td>
@@ -220,43 +209,71 @@ async function loadBuilds() {
 function filterBuilds() { loadBuilds(); }
 function toggleAll() { const c = document.getElementById("selectAll").checked; document.querySelectorAll(".build-check").forEach(x => x.checked = c); }
 
-function deleteLocalBuild(id) {
-  if (!confirm("Delete?")) return;
-  let builds = getStore("admin_builds");
-  builds = builds.filter(b => b.id !== id);
-  setStore("admin_builds", builds);
-  loadBuilds();
+function batchDelete() {
+  const checks = document.querySelectorAll(".build-check:checked");
+  if (!checks.length) return alert("Select builds to delete");
+  if (!confirm("Delete " + checks.length + " selected releases? (GitHub API cannot delete releases without token)")) return;
+  alert("To delete releases, delete them directly on GitHub: https://github.com/" + GITHUB_REPO + "/releases");
 }
 
+// ===== USERS =====
 async function loadUsers() {
   let users = [];
-  if (useFirebase && firebase.apps.length) {
+  if (useFirebase && typeof firebase !== "undefined" && firebase.firestore) {
     try { const snap = await db.collection("users").limit(100).get();
       users = snap.docs.map(d => ({ id: d.id, ...d.data() })); } catch {}
   }
   const tbody = document.getElementById("usersTableBody");
   if (!tbody) return;
   if (!users.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#888">No users yet. Users appear after someone builds an APK.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No users yet. Users appear after someone builds an APK.</td></tr>`;
     return;
   }
   tbody.innerHTML = users.map(u => `<tr>
     <td style="font-family:monospace;font-size:0.8rem">${(u.id || "").slice(0, 16)}</td>
-    <td><span class="status-badge">${u.tier || "free"}</span></td>
+    <td><span class="status-badge ${u.tier === "paid" ? "paid" : ""}">${u.tier || "free"}</span></td>
     <td>${u.builds_today || 0}</td>
+    <td>${u.total_builds || 0}</td>
     <td>${u.last_build_date || "—"}</td>
     <td>${u.banned ? '<span style="color:#ff453a">Banned</span>' : '<span style="color:#4cd964">Active</span>'}</td>
-    <td><button class="btn-sm" onclick="toggleLocalTier('${u.id}')">Toggle Tier</button></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn-sm" onclick="toggleUserTier('${u.id}')">${u.tier === "paid" ? "Free" : "Paid"}</button>
+      <button class="btn-sm ${u.banned ? "" : "danger"}" onclick="toggleUserBan('${u.id}', ${u.banned})">${u.banned ? "Unban" : "Ban"}</button>
+      <button class="btn-sm danger" onclick="deleteUser('${u.id}')">Del</button>
+    </td>
   </tr>`).join("");
 }
 
-function toggleLocalTier(id) {
-  let users = getStore("admin_users");
-  const idx = users.findIndex(u => u.id === id);
-  if (idx >= 0) { users[idx].tier = users[idx].tier === "paid" ? "free" : "paid"; setStore("admin_users", users); }
-  loadUsers();
+async function toggleUserTier(uid) {
+  if (!useFirebase || typeof db === "undefined") { alert("Firebase not connected"); return; }
+  try {
+    const ref = db.collection("users").doc(uid);
+    const snap = await ref.get();
+    if (!snap.exists) return alert("User not found");
+    const current = snap.data().tier || "free";
+    await ref.update({ tier: current === "paid" ? "free" : "paid" });
+    loadUsers();
+  } catch (e) { alert("Error: " + e.message); }
 }
 
+async function toggleUserBan(uid, currentlyBanned) {
+  if (!useFirebase || typeof db === "undefined") { alert("Firebase not connected"); return; }
+  try {
+    await db.collection("users").doc(uid).update({ banned: !currentlyBanned });
+    loadUsers();
+  } catch (e) { alert("Error: " + e.message); }
+}
+
+async function deleteUser(uid) {
+  if (!confirm("Delete user " + uid.slice(0, 12) + "?")) return;
+  if (!useFirebase || typeof db === "undefined") { alert("Firebase not connected"); return; }
+  try {
+    await db.collection("users").doc(uid).delete();
+    loadUsers();
+  } catch (e) { alert("Error: " + e.message); }
+}
+
+// ===== SETTINGS =====
 async function loadSettings() {
   const settings = await getSettings();
   Object.keys(settings).forEach(key => {
@@ -270,21 +287,22 @@ async function saveSettings() {
   const settings = {};
   els.forEach(el => { settings[el.id.replace("set_", "")] = el.value; });
   setStore("admin_settings", settings);
-  if (useFirebase) {
+  if (useFirebase && typeof db !== "undefined") {
     try { await db.collection("settings").doc("default").set(settings, { merge: true }); } catch {}
   }
   alert("Settings saved!");
 }
 
+// ===== PAYMENTS =====
 async function loadPayments() {
   let payments = getStore("admin_payments");
-  if (useFirebase) {
+  if (useFirebase && typeof firebase !== "undefined" && firebase.firestore) {
     try { const snap = await db.collection("payments").orderBy("created_at", "desc").limit(50).get();
-      payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setStore("admin_payments", payments); } catch {}
+      payments = snap.docs.map(d => ({ id: d.id, ...d.data() })); setStore("admin_payments", payments); } catch {}
   }
   const tbody = document.getElementById("paymentsTableBody");
   if (!tbody) return;
+  if (!payments.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#888">No payments</td></tr>`; return; }
   tbody.innerHTML = payments.map(p => `<tr>
     <td>${(p.id || "").slice(0, 10)}</td>
     <td style="font-family:monospace;font-size:0.8rem">${(p.device_id || "").slice(0, 12)}</td>
@@ -292,42 +310,56 @@ async function loadPayments() {
     <td>${p.upi_ref || "—"}</td>
     <td><span class="status-badge ${p.approved ? "completed" : "pending"}">${p.approved ? "Approved" : "Pending"}</span></td>
     <td>${p.created_at ? new Date(p.created_at).toLocaleDateString() : "—"}</td>
-    <td>${p.approved ? "—" : `<button class="btn-sm" onclick="approveLocalPayment('${p.id}')">Approve</button>`}</td>
+    <td>${p.approved ? "—" : `<button class="btn-sm" onclick="approvePayment('${p.id}')">Approve</button>`}</td>
   </tr>`).join("");
 }
 
-function approveLocalPayment(id) {
+async function approvePayment(id) {
+  if (useFirebase && typeof db !== "undefined") {
+    try {
+      await db.collection("payments").doc(id).update({ approved: true });
+      const snap = await db.collection("payments").doc(id).get();
+      const data = snap.data();
+      if (data?.device_id) {
+        const userRef = db.collection("users").doc(data.device_id);
+        const userSnap = await userRef.get();
+        if (userSnap.exists) { await userRef.update({ tier: "paid" }); }
+        else { await userRef.set({ tier: "paid", banned: false, builds_today: 0, total_builds: 0, last_build_date: "" }); }
+      }
+    } catch (e) { alert("Error approving: " + e.message); }
+  }
   let payments = getStore("admin_payments");
   const p = payments.find(x => x.id === id);
   if (p) { p.approved = true; setStore("admin_payments", payments); }
-  let users = getStore("admin_users");
-  const u = users.find(x => x.id === p?.device_id);
-  if (u) { u.tier = "paid"; setStore("admin_users", users); }
   loadPayments();
 }
 
+// ===== APP STORE =====
 async function loadStore() {
   let apps = getStore("admin_store");
-  if (useFirebase) {
+  if (useFirebase && typeof firebase !== "undefined" && firebase.firestore) {
     try { const snap = await db.collection("store").orderBy("created_at", "desc").get();
-      apps = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setStore("admin_store", apps); } catch {}
+      apps = snap.docs.map(d => ({ id: d.id, ...d.data() })); setStore("admin_store", apps); } catch {}
   }
   const tbody = document.getElementById("storeTableBody");
   if (!tbody) return;
+  if (!apps.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:#888">No apps in store</td></tr>`; return; }
   tbody.innerHTML = apps.map(a => `<tr>
     <td><strong>${a.name || "—"}</strong></td>
     <td style="font-family:monospace;font-size:0.8rem">${a.package || "—"}</td>
     <td>${a.category || "—"}</td>
     <td>${a.featured ? "&#11088;" : "—"}</td>
-    <td><button class="btn-sm danger" onclick="deleteLocalApp('${a.id}')">&#128465;</button></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn-sm" onclick="toggleFeatured('${a.id}')">${a.featured ? "Unfeature" : "Feature"}</button>
+      <button class="btn-sm danger" onclick="deleteApp('${a.id}')">&#128465;</button>
+    </td>
   </tr>`).join("");
 }
 
 function showAddApp() { document.getElementById("addAppModal").classList.remove("hidden"); }
 function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
 
-function createApp() {
+async function createApp() {
   const app = {
     id: "app_" + Date.now(),
     name: document.getElementById("newAppName").value.trim(),
@@ -342,14 +374,33 @@ function createApp() {
   let apps = getStore("admin_store");
   apps.push(app);
   setStore("admin_store", apps);
+  if (useFirebase && typeof db !== "undefined") {
+    try { await db.collection("store").doc(app.id).set(app); } catch {}
+  }
   closeModal("addAppModal");
   loadStore();
 }
 
-function deleteLocalApp(id) {
+async function deleteApp(id) {
   if (!confirm("Delete?")) return;
+  if (useFirebase && typeof db !== "undefined") {
+    try { await db.collection("store").doc(id).delete(); } catch {}
+  }
   let apps = getStore("admin_store");
   apps = apps.filter(a => a.id !== id);
   setStore("admin_store", apps);
+  loadStore();
+}
+
+async function toggleFeatured(id) {
+  if (useFirebase && typeof db !== "undefined") {
+    try {
+      const snap = await db.collection("store").doc(id).get();
+      if (snap.exists) { await db.collection("store").doc(id).update({ featured: !snap.data().featured }); }
+    } catch {}
+  }
+  let apps = getStore("admin_store");
+  const a = apps.find(x => x.id === id);
+  if (a) { a.featured = !a.featured; setStore("admin_store", apps); }
   loadStore();
 }
