@@ -38,12 +38,13 @@ function switchAuthTab(tab) {
 }
 
 async function signInWithEmail() {
-  clearAuthError();
-  const email = document.getElementById("signInEmail").value.trim();
-  const password = document.getElementById("signInPassword").value;
-  if (!email || !password) { showAuthError("Please fill in all fields"); return; }
   try {
+    clearAuthError();
+    const email = document.getElementById("signInEmail").value.trim();
+    const password = document.getElementById("signInPassword").value;
+    if (!email || !password) { showAuthError("Please fill in all fields"); return; }
     document.getElementById("signInBtn").disabled = true;
+    if (typeof firebase === "undefined" || !firebase.auth) { showAuthError("Firebase not loaded. Check internet."); document.getElementById("signInBtn").disabled = false; return; }
     await firebase.auth().signInWithEmailAndPassword(email, password);
   } catch (e) {
     showAuthError(e.message);
@@ -52,14 +53,15 @@ async function signInWithEmail() {
 }
 
 async function signUpWithEmail() {
-  clearAuthError();
-  const name = document.getElementById("signUpName").value.trim();
-  const email = document.getElementById("signUpEmail").value.trim();
-  const password = document.getElementById("signUpPassword").value;
-  if (!name || !email || !password) { showAuthError("Please fill in all fields"); return; }
-  if (password.length < 6) { showAuthError("Password must be at least 6 characters"); return; }
   try {
+    clearAuthError();
+    const name = document.getElementById("signUpName").value.trim();
+    const email = document.getElementById("signUpEmail").value.trim();
+    const password = document.getElementById("signUpPassword").value;
+    if (!name || !email || !password) { showAuthError("Please fill in all fields"); return; }
+    if (password.length < 6) { showAuthError("Password must be at least 6 characters"); return; }
     document.getElementById("signUpBtn").disabled = true;
+    if (typeof firebase === "undefined" || !firebase.auth) { showAuthError("Firebase not loaded. Check internet."); document.getElementById("signUpBtn").disabled = false; return; }
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await cred.user.updateProfile({ displayName: name });
   } catch (e) {
@@ -126,6 +128,10 @@ function initAuth() {
     }
   });
 }
+
+window.addEventListener("error", function(e) {
+  alert("JS Error: " + e.message + " at " + e.filename + ":" + e.lineno);
+});
 
 document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("buildBtn").addEventListener("click", startBuild);

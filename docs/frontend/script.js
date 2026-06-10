@@ -32,22 +32,25 @@ function switchAuthTab(tab) {
 }
 
 async function signInWithEmail() {
-  clearAuthError();
-  const email = document.getElementById("signInEmail").value.trim();
-  const password = document.getElementById("signInPassword").value;
-  if (!email || !password) { showAuthError("Please fill in all fields"); return; }
-  try { await firebase.auth().signInWithEmailAndPassword(email, password); }
-  catch (e) { showAuthError(e.message); }
+  try {
+    clearAuthError();
+    const email = document.getElementById("signInEmail").value.trim();
+    const password = document.getElementById("signInPassword").value;
+    if (!email || !password) { showAuthError("Please fill in all fields"); return; }
+    if (typeof firebase === "undefined" || !firebase.auth) { showAuthError("Firebase not loaded. Check internet."); return; }
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+  } catch (e) { showAuthError(e.message); }
 }
 
 async function signUpWithEmail() {
-  clearAuthError();
-  const name = document.getElementById("signUpName").value.trim();
-  const email = document.getElementById("signUpEmail").value.trim();
-  const password = document.getElementById("signUpPassword").value;
-  if (!name || !email || !password) { showAuthError("Please fill in all fields"); return; }
-  if (password.length < 6) { showAuthError("Password must be at least 6 characters"); return; }
   try {
+    clearAuthError();
+    const name = document.getElementById("signUpName").value.trim();
+    const email = document.getElementById("signUpEmail").value.trim();
+    const password = document.getElementById("signUpPassword").value;
+    if (!name || !email || !password) { showAuthError("Please fill in all fields"); return; }
+    if (password.length < 6) { showAuthError("Password must be at least 6 characters"); return; }
+    if (typeof firebase === "undefined" || !firebase.auth) { showAuthError("Firebase not loaded. Check internet."); return; }
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await cred.user.updateProfile({ displayName: name });
   } catch (e) { showAuthError(e.message); }
