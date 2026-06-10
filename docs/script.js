@@ -129,10 +129,6 @@ function initAuth() {
   });
 }
 
-window.addEventListener("error", function(e) {
-  alert("JS Error: " + e.message + " at " + e.filename + ":" + e.lineno);
-});
-
 document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("buildBtn").addEventListener("click", startBuild);
   document.getElementById("resetBtn1").addEventListener("click", resetForm);
