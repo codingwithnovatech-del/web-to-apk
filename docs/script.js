@@ -161,26 +161,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   initScrollEffect();
 });
 
-  if (localStorage.getItem("theme") === "light") {
-    document.body.classList.add("light");
-    document.getElementById("themeToggle").innerHTML = "&#9728;&#65039;";
-  }
-
-  await loadTokenFromFirestore();
-
-  if (cachedToken) {
-    document.getElementById("loginScreen").classList.add("hidden");
-    document.getElementById("appScreen").classList.remove("hidden");
-    loadHistory();
-  } else {
-    document.getElementById("loginScreen").classList.remove("hidden");
-    document.getElementById("appScreen").classList.add("hidden");
-  }
-
-  initParticles();
-  initScrollEffect();
-});
-
 // ===== PARTICLES =====
 function initParticles() {
   const canvas = document.getElementById("particles-canvas");
