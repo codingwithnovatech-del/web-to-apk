@@ -152,10 +152,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("themeToggle").innerHTML = "&#9728;&#65039;";
   }
 
+  loadPublicStats();
   initAuth();
   initParticles();
   initScrollEffect();
 });
+
+async function loadPublicStats() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100`, {
+      headers: { Accept: "application/vnd.github.v3+json" }
+    });
+    if (!res.ok) return;
+    const releases = await res.json();
+    const withApk = releases.filter(r => r.assets?.some(a => a.name.endsWith(".apk")));
+    const totalDl = withApk.reduce((s, r) => s + r.assets.reduce((a, as) => a + (as.download_count || 0), 0), 0);
+    document.getElementById("dashTotal").textContent = withApk.length;
+    document.getElementById("dashDownloads").textContent = totalDl;
+    document.getElementById("dashActive").textContent = withApk.length;
+    document.getElementById("dashCredits").textContent = "∞";
+  } catch {}
+}
 
 // ===== PARTICLES =====
 function initParticles() {
@@ -348,6 +365,8 @@ async function startBuild() {
   const pkg = document.getElementById("packageInput").value.trim() || "";
   const icon = document.getElementById("iconInput").value.trim() || "";
   const orientation = document.getElementById("orientationInput").value || "default";
+  const template = document.getElementById("templateInput").value || "default";
+  const primaryColor = document.getElementById("colorInput").value.trim() || "#FF5C7A";
 
   if (!url || !name) {
     alert("Please fill in all fields");
@@ -415,7 +434,7 @@ async function startBuild() {
       },
       body: JSON.stringify({
         ref: "main",
-        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon, orientation, device_id: deviceId }
+        inputs: { url, app_name: name, build_id: buildId, app_version: version, package_name: pkg, icon_url: icon, orientation, template, primary_color: primaryColor, device_id: deviceId }
       })
     });
 
