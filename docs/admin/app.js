@@ -287,9 +287,11 @@ async function saveSettings() {
   const settings = {};
   els.forEach(el => { settings[el.id.replace("set_", "")] = el.value; });
   setStore("admin_settings", settings);
-  if (useFirebase && typeof db !== "undefined") {
-    try { await db.collection("settings").doc("default").set(settings, { merge: true }); } catch {}
-  }
+  try {
+    if (typeof db !== "undefined") {
+      await db.collection("settings").doc("default").set(settings, { merge: true });
+    }
+  } catch (e) { console.warn("Firestore sync failed, saved locally:", e); }
   alert("Settings saved!");
 }
 

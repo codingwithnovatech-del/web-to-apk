@@ -5,6 +5,12 @@ let fbUser = null;
 let cachedToken = "";
 
 async function loadTokenFromFirestore() {
+  // Check localStorage first (admin saves here when Firebase isn't available)
+  try {
+    const local = JSON.parse(localStorage.getItem("admin_settings") || "{}");
+    if (local.github_token) { cachedToken = local.github_token; return; }
+  } catch {}
+  // Then try Firestore
   if (typeof firebase === "undefined" || !firebase.firestore) return;
   try {
     const snap = await firebase.firestore().collection("settings").doc("default").get();
@@ -153,6 +159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   loadPublicStats();
+  await loadTokenFromFirestore();
   initAuth();
   initParticles();
   initScrollEffect();
