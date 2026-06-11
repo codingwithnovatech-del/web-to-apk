@@ -129,7 +129,6 @@ function initAuth() {
       showApp(user);
       loadHistory();
     } else {
-      cachedToken = "";
       showLoginScreen();
     }
   });
