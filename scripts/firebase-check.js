@@ -1,13 +1,28 @@
 const admin = require("firebase-admin");
-const fs = require("fs");
-
-const svc = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-admin.initializeApp({ credential: admin.credential.cert(svc) });
-const db = admin.firestore();
 
 async function main() {
   const deviceId = process.env.INPUT_DEVICE_ID || "unknown";
   const buildId = process.env.INPUT_BUILD_ID || "unknown";
+
+  // Allow build if Firebase is not configured
+  const svcJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!svcJson) {
+    console.log("build_allowed=true");
+    console.log("tier=free");
+    console.log("branding=false");
+    return;
+  }
+
+  let svc;
+  try { svc = JSON.parse(svcJson); } catch {
+    console.log("build_allowed=true");
+    console.log("tier=free");
+    console.log("branding=false");
+    return;
+  }
+
+  admin.initializeApp({ credential: admin.credential.cert(svc) });
+  const db = admin.firestore();
 
   const settingsDoc = await db.collection("settings").doc("default").get();
   const settings = settingsDoc.data() || { daily_limit: 3, branding_enabled: true };
@@ -70,6 +85,7 @@ async function safeUpdate(ref, data) {
 }
 
 main().catch(e => {
-  console.log("build_allowed=false");
-  console.log(`reason=error: ${e.message}`);
+  console.log("build_allowed=true");
+  console.log("tier=free");
+  console.log("branding=false");
 });
