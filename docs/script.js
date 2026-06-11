@@ -18,6 +18,16 @@ async function loadTokenFromFirestore() {
       cachedToken = snap.data().github_token;
     }
   } catch {}
+  // Finally try config.json from repo (cross-device fallback)
+  if (!cachedToken) {
+    try {
+      const res = await fetch("https://raw.githubusercontent.com/codingwithnovatech-del/web-to-apk/main/docs/config.json");
+      if (res.ok) {
+        const config = await res.json();
+        if (config.github_token) cachedToken = config.github_token;
+      }
+    } catch {}
+  }
 }
 
 function showAuthError(msg) {

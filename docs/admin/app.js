@@ -292,6 +292,28 @@ async function saveSettings() {
       await db.collection("settings").doc("default").set(settings, { merge: true });
     }
   } catch (e) { console.warn("Firestore sync failed, saved locally:", e); }
+  // Also write config.json to repo for cross-device access
+  try {
+    const token = settings.github_token || "";
+    if (token) {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(settings, null, 2))));
+      // Get existing file SHA if present
+      let sha = "";
+      try {
+        const existing = await fetch("https://api.github.com/repos/codingwithnovatech-del/web-to-apk/contents/docs/config.json", {
+          headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json" }
+        });
+        if (existing.ok) { const d = await existing.json(); sha = d.sha; }
+      } catch {}
+      const res = await fetch("https://api.github.com/repos/codingwithnovatech-del/web-to-apk/contents/docs/config.json", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github.v3+json", "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "update config", content, sha })
+      });
+      if (res.ok) console.log("Config synced to repo");
+      else console.warn("Config sync to repo failed", await res.text().catch(()=>""));
+    }
+  } catch (e) { console.warn("Repo sync failed:", e); }
   alert("Settings saved!");
 }
 
