@@ -55,6 +55,14 @@ on:
         description: Device ID
         required: true
         default: ""
+      template:
+        description: App Template
+        required: false
+        default: "default"
+      primary_color:
+        description: Primary Color
+        required: false
+        default: "#FF5C7A"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
